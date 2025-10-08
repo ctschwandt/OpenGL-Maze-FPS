@@ -1,4 +1,4 @@
-# OpenGL Maze FPS
+# OpenGL Maze FPS (in progress)
 
 **Language/Tools:** C++, OpenGL, FreeGLUT  
 
