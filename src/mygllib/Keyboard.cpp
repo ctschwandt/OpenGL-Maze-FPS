@@ -5,7 +5,7 @@
 #include "Globals.h"
 #include "mygllib/View.h"
 #include "mygllib/SingletonView.h"
-#include "Keyboard.h"
+#include "mygllib/Keyboard.h"
 
 void mygllib::Keyboard::keyboard(unsigned char key, int w, int h)
 {

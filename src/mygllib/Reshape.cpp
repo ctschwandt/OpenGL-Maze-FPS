@@ -3,7 +3,7 @@
 
 #include "mygllib/View.h"
 #include "mygllib/SingletonView.h"
-#include "Reshape.h"
+#include "mygllib/Reshape.h"
 
 void mygllib::Reshape::reshape(int w, int h)
 {
