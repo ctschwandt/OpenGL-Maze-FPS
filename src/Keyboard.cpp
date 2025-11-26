@@ -3,8 +3,8 @@
 
 #include <GL/freeglut.h>
 #include "Globals.h"
-#include "View.h"
-#include "SingletonView.h"
+#include "mygllib/View.h"
+#include "mygllib/SingletonView.h"
 #include "Keyboard.h"
 
 void mygllib::Keyboard::keyboard(unsigned char key, int w, int h)

@@ -12,8 +12,8 @@
 
 #include "Globals.h"
 #include "gl3d.h"
-#include "View.h"
-#include "SingletonView.h"
+#include "mygllib/View.h"
+#include "mygllib/SingletonView.h"
 #include "Reshape.h"
 #include "Keyboard.h"
 #include "Material.h"

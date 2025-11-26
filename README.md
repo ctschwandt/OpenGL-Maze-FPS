@@ -5,18 +5,30 @@ A 3D first-person shooter that uses OpenGL and FreeGLUT to render randomly gener
 ## Repository structure
 
 - `src/` – Source files for the game logic and rendering pipeline.
+  - `src/mygllib/` – OpenGL helper implementations (view handling, window config, singletons).
 - `include/` – Project headers shared across source files.
+  - `include/mygllib/` – Helper headers for camera/view management and related utilities.
 - `assets/` – Artifacts such as textures, models, and shader programs.
   - `assets/shaders/` – GLSL shaders for rendering.
   - `assets/textures/` – Texture assets for maze walls and objects.
   - `assets/models/` – Static models used in the scene.
-- `docs/` – Project documentation, including the original project write-up (`OpenGL-Maze-FPS.pdf`).
+- `docs/` – Project documentation, including the original project write-up (`OpenGL-Maze-FPS.pdf`) and legacy submission artifacts under `docs/archive/`.
 
 ## Getting started
 
-1. Ensure you have a modern C++ compiler, CMake, OpenGL, and FreeGLUT installed.
-2. Add your source files to `src/` and headers to `include/`.
-3. Place any required textures, shaders, and models inside the corresponding `assets/` subdirectories.
-4. Configure your preferred build system (e.g., CMake or Make) to reference the organized directories above.
+1. Ensure you have a modern C++ compiler, OpenGL, and FreeGLUT installed.
+2. Build the project from the repository root using the provided `Makefile`:
 
-This structure keeps assets and documentation separate from source code, making the project easier to navigate and extend.
+   ```sh
+   make
+   ```
+
+3. Run the compiled binary:
+
+   ```sh
+   make run
+   ```
+
+4. Add any required textures, shaders, and models inside the corresponding `assets/` subdirectories.
+
+The updated layout keeps assets, headers, documentation, and build artifacts neatly separated, making the project easier to navigate and extend.

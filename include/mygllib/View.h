@@ -5,7 +5,7 @@
 
 #include <iostream>
 #include <GL/freeglut.h>
-#include "config.h"
+#include "mygllib/config.h"
 
 namespace mygllib
 {

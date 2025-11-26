@@ -4,7 +4,7 @@
 #ifndef SINGLETONVIEW_H
 #define SINGLETONVIEW_H
 
-#include "View.h"
+#include "mygllib/View.h"
 
 
 namespace mygllib
