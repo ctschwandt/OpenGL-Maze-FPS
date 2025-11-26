@@ -11,13 +11,13 @@
 #include <vector>
 
 #include "Globals.h"
-#include "gl3d.h"
+#include "mygllib/gl3d.h"
 #include "mygllib/View.h"
 #include "mygllib/SingletonView.h"
-#include "Reshape.h"
-#include "Keyboard.h"
-#include "Material.h"
-#include "Light.h"
+#include "mygllib/Reshape.h"
+#include "mygllib/Keyboard.h"
+#include "mygllib/Material.h"
+#include "mygllib/Light.h"
 #include "myglm.h"
 
 //==============================================================

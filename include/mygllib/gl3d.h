@@ -4,8 +4,8 @@
 #define GL3D_H
 
 #include <GL/freeglut.h>
-#include "mygllib/config.h"
-#include "mygllib/View.h"
+#include "config.h"
+#include "View.h"
 #include "Material.h"
 
 namespace mygllib
