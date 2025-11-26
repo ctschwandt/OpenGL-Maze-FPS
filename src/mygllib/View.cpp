@@ -1,4 +1,4 @@
-#include "View.h"
+#include "mygllib/View.h"
 
 namespace mygllib
 {

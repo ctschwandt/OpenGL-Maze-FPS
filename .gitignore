@@ -39,3 +39,9 @@
 
 # debug information files
 *.dwo
+
+# Local build outputs
+build/
+
+# Archived submissions
+*.tar.gz

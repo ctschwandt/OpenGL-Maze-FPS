@@ -1,7 +1,7 @@
 // File  : SingletonView.cpp
 // Author: smaug
 
-#include "SingletonView.h"
+#include "mygllib/SingletonView.h"
 
 mygllib::View * mygllib::SingletonView::instance_(new mygllib::View());
 

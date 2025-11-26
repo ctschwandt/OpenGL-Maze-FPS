@@ -1,8 +1,8 @@
 // File  : Reshape.cpp
 // Author: smaug
 
-#include "View.h"
-#include "SingletonView.h"
+#include "mygllib/View.h"
+#include "mygllib/SingletonView.h"
 #include "Reshape.h"
 
 void mygllib::Reshape::reshape(int w, int h)

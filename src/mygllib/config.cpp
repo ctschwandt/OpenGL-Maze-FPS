@@ -1,6 +1,7 @@
 // File: config.cpp
 
-#include <GL/freeglut.h> 
+#include <GL/freeglut.h>
+#include "mygllib/config.h"
 
 namespace mygllib
 {
