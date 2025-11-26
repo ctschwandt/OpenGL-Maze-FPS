@@ -22,8 +22,8 @@ $(BUILD_DIR):
 
 .PHONY: clean run
 
-run: $(TARGET)
+r run: $(TARGET)
 	$(TARGET)
 
-clean:
+c clean:
 	rm -rf $(BUILD_DIR)
