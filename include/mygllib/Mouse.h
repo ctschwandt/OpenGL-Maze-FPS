@@ -1,18 +1,12 @@
-// File: Mouse.h
-// Mouse input for FPS camera look
+#pragma once
 
-#ifndef MOUSE_H
-#define MOUSE_H
+#include "mygllib/GLFWInput.h"
 
 namespace mygllib
 {
-    class GLFWInput;
-
     class Mouse
     {
     public:
-        static void update_from_input(const GLFWInput & input);
+        static void update_from_input(const GLFWInput &input, float dt);
     };
 }
-
-#endif

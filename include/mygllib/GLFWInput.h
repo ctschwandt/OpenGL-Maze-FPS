@@ -10,7 +10,7 @@ namespace mygllib
     public:
         explicit GLFWInput(GLFWwindow *window);
 
-        // Call once per frame (after glfwPollEvents)
+        // Call once per frame (AFTER glfwPollEvents)
         void begin_frame();
 
         // Per-frame mouse deltas (in pixels)
