@@ -124,9 +124,9 @@ void draw_box(float cx, float cy, float cz,
 
 void draw_maze_columns()
 {
-    float H     = 3.0f;      // wall height
+    float H     = 1.5f;      // wall height in logical units
     float hy    = H / 2.0f;
-    int   tileN = maze.tiles_n();
+    int   tileN = maze.tiles_n();   // = 2*n + 1
 
     for (int tr = 0; tr < tileN; ++tr)
     {
@@ -135,12 +135,12 @@ void draw_maze_columns()
             if (!maze.is_wall_tile(tr, tc))
                 continue;
 
-            // Each tile is a 1x1 in XZ
+            // logical center (before any scaling)
             float cx = tc + 0.5f;
             float cz = tr + 0.5f;
-            float cy = hy;  // center at y = 1.5
+            float cy = hy;          // center in Y
 
-            // full 1x1 footprint in XZ, height 3
+            // Each wall fully occupies one 1x1 tile footprint
             draw_box(cx, cy, cz,
                      0.5f, hy, 0.5f);
         }
@@ -160,9 +160,13 @@ void display()
 
     //mygllib::Light::all_off();
     glLineWidth(1.0f);
+
+    const float S = 3.0f;
+    float maze_span = S * maze.N;
+
     if (globals::draw_plane)
     {
-        mygllib::draw_xz_plane(); //-5000.0f, 5000.0f, -5000.0f, 5000.0f);
+        mygllib::draw_xz_plane(0.0f , maze_span, 0.0f, maze_span); //-5000.0f, 5000.0f, -5000.0f, 5000.0f);
     }
     if (globals::draw_axes)
     {
@@ -179,6 +183,7 @@ void display()
     glColor3f(0.2f, 0.2f, 0.2f);
     glPushMatrix();
     {
+        glScalef(S, S, S);
         draw_maze_columns();
     }
     glPopMatrix();

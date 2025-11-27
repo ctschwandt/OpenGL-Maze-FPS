@@ -68,7 +68,8 @@ public:
     Maze(int size = 0, int r = 0, int c = 0)
         : cells(size * size),
           path(),
-          n(size)
+          n(size),
+          N(2 * n + 1)
     {
         init(r, c);
     }
@@ -82,11 +83,12 @@ public:
     void   move_once();
     int tiles_n() const { return 2 * n + 1; }
     bool is_wall_tile(int tr, int tc) const;
-
+    
     // member variables //
     std::vector<Cell> cells;
     Path              path;
     int               n;
+    int               N;
 
     static Cell*      SENTINEL_CELL;
     static const int  DELTA[4][2];
