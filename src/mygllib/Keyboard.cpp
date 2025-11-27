@@ -1,113 +1,71 @@
 // File  : Keyboard.cpp
 // Author: Cole Schwandt
 
+#include <cmath>
+#include <cstdlib>
 #include <GL/freeglut.h>
-#include "Globals.h"
 #include "mygllib/View.h"
 #include "mygllib/SingletonView.h"
 #include "mygllib/Keyboard.h"
 
-void mygllib::Keyboard::keyboard(unsigned char key, int w, int h)
+namespace
 {
-    using namespace globals;
+    const float MOVE_SPEED = 0.2f;
+    const float VERTICAL_SPEED = 0.2f;
+}
+
+void mygllib::Keyboard::keyboard(unsigned char key, int, int)
+{
     mygllib::View & view = *(mygllib::SingletonView::getInstance());
 
-    const float dv = 0.1f;
+    float yaw = view.yaw();
+    float fx = std::cos(yaw);
+    float fz = std::sin(yaw);
+    float rx = -fz;
+    float rz =  fx;
+
+    bool moved = false;
+
     switch (key)
     {
-        // camera controls
-        //=======================
-        case 'x': view.eyex() -= dv; break;
-        case 'X': view.eyex() += dv; break;
-        case 'y': view.eyey() -= dv; break;
-        case 'Y': view.eyey() += dv; break;
-        case 'z': view.eyez() -= dv; break;
-        case 'Z': view.eyez() += dv; break;
-            
-        case 'v': view.fovy() -= 0.1; break;
-        case 'V': view.fovy() += 0.1; break;            
-        case 'a': view.aspect() -= 0.1; break;
-        case 'A': view.aspect() += 0.1; break;
-        case 'n': view.zNear() -= 0.1; break;
-        case 'N': view.zNear() += 0.1; break;
-        case 'f': view.zFar() -= 0.1; break;
-        case 'F': view.zFar() += 0.1; break;
-
-        // area control
-        //=======================
-        case '[':
-            g_A -= 1.0f;
-            if (g_A < 1.0f)
-                g_A = 1.0f;
+        case 27: // ESC
+            std::exit(0);
             break;
-
-        case ']':
-            g_A += 1.0f;
+        case 'w': case 'W':
+            view.eyex() += fx * MOVE_SPEED;
+            view.eyez() += fz * MOVE_SPEED;
+            moved = true;
             break;
-
-        // generate terrain
-        //======================
-        case 'g':
-            g_heightmap.reset(g_n, g_M, g_r);
+        case 's': case 'S':
+            view.eyex() -= fx * MOVE_SPEED;
+            view.eyez() -= fz * MOVE_SPEED;
+            moved = true;
             break;
-            
-        // M control: random range
-        //======================
-        case 'm':              // smaller random amplitude
-            g_M -= 1.0f;
-            if (g_M < 0.0f) g_M = 0.0f;
-            g_heightmap.reset(g_n, g_M, g_r);
+        case 'a': case 'A':
+            view.eyex() += rx * MOVE_SPEED;
+            view.eyez() += rz * MOVE_SPEED;
+            moved = true;
             break;
-
-        case 'M':              // larger random amplitude
-            g_M += 1.0f;
-            g_heightmap.reset(g_n, g_M, g_r);
+        case 'd': case 'D':
+            view.eyex() -= rx * MOVE_SPEED;
+            view.eyez() -= rz * MOVE_SPEED;
+            moved = true;
             break;
-
-        // n control: (N = 2^n + 1)
-        //======================
-        case 'h':              // smaller N
-            if (g_n > 1)
-            {
-                --g_n;
-                g_heightmap.reset(g_n, g_M, g_r);
-            }
+        case ' ': // jump
+            view.eyey() += VERTICAL_SPEED;
+            moved = true;
             break;
-
-        case 'H':              // larger N
-            if (g_n < 10)      // cap however you like
-            {
-                ++g_n;
-                g_heightmap.reset(g_n, g_M, g_r);
-            }
+        case 0x11: // left control key
+            view.eyey() -= VERTICAL_SPEED;
+            moved = true;
             break;
-
-        // r control: roughness
-        //======================
-        case 'r':              // decrease roughness
-            g_r -= 0.1f;
-            if (g_r < 0.1f) g_r = 0.1f;
-            g_heightmap.reset(g_n, g_M, g_r);
-            break;
-
-        case 'R':              // increase roughness
-            g_r += 0.1f;
-            if (g_r > 5.0f) g_r = 5.0f;
-            g_heightmap.reset(g_n, g_M, g_r);
+        default:
             break;
     }
 
-    // clamp values
-    if (view.fovy() < 15.0f)  view.fovy() = 15.f;
-    if (view.fovy() > 120.0f) view.fovy() = 120.f;
-
-    if (view.aspect() < 0.1f) view.aspect() = 0.1f;
-
-    if (view.zNear() < 1e-4f) view.zNear() = 1e-4f;
-    if (view.zFar()  < view.zNear() * 10.f) view.zFar() = view.zNear() * 10.f;
-
-    view.set_projection();
-    view.lookat();
-    //light.set_position();
-    glutPostRedisplay();
+    if (moved)
+    {
+        view.update_center_from_yaw_pitch();
+        glutPostRedisplay();
+    }
 }
