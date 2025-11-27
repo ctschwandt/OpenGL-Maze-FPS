@@ -3,10 +3,11 @@
 
 #include <cmath>
 #include <cstdlib>
-#include <GL/freeglut.h>
-#include "mygllib/View.h"
-#include "mygllib/SingletonView.h"
+
+#include "mygllib/GLFWInput.h"
 #include "mygllib/Keyboard.h"
+#include "mygllib/SingletonView.h"
+#include "mygllib/View.h"
 
 namespace
 {
@@ -14,7 +15,7 @@ namespace
     const float VERTICAL_SPEED = 0.2f;
 }
 
-void mygllib::Keyboard::keyboard(unsigned char key, int, int)
+void mygllib::Keyboard::update_from_input(const GLFWInput &input)
 {
     mygllib::View & view = *(mygllib::SingletonView::getInstance());
 
@@ -26,46 +27,47 @@ void mygllib::Keyboard::keyboard(unsigned char key, int, int)
 
     bool moved = false;
 
-    switch (key)
+    if (input.key_down(GLFW_KEY_ESCAPE))
     {
-        case 27: // ESC
-            std::exit(0);
-            break;
-        case 'w': case 'W':
-            view.eyex() += fx * MOVE_SPEED;
-            view.eyez() += fz * MOVE_SPEED;
-            moved = true;
-            break;
-        case 's': case 'S':
-            view.eyex() -= fx * MOVE_SPEED;
-            view.eyez() -= fz * MOVE_SPEED;
-            moved = true;
-            break;
-        case 'a': case 'A':
-            view.eyex() -= rx * MOVE_SPEED;
-            view.eyez() -= rz * MOVE_SPEED;
-            moved = true;
-            break;
-        case 'd': case 'D':
-            view.eyex() += rx * MOVE_SPEED;
-            view.eyez() += rz * MOVE_SPEED;
-            moved = true;
-            break;
-        case ' ': // jump
-            view.eyey() += VERTICAL_SPEED;
-            moved = true;
-            break;
-        case 'c': case'C': // crouch
-            view.eyey() -= VERTICAL_SPEED;
-            moved = true;
-            break;
-        default:
-            break;
+        glfwSetWindowShouldClose(input.window(), GLFW_TRUE);
+    }
+    if (input.key_down(GLFW_KEY_W))
+    {
+        view.eyex() += fx * MOVE_SPEED;
+        view.eyez() += fz * MOVE_SPEED;
+        moved = true;
+    }
+    if (input.key_down(GLFW_KEY_S))
+    {
+        view.eyex() -= fx * MOVE_SPEED;
+        view.eyez() -= fz * MOVE_SPEED;
+        moved = true;
+    }
+    if (input.key_down(GLFW_KEY_A))
+    {
+        view.eyex() -= rx * MOVE_SPEED;
+        view.eyez() -= rz * MOVE_SPEED;
+        moved = true;
+    }
+    if (input.key_down(GLFW_KEY_D))
+    {
+        view.eyex() += rx * MOVE_SPEED;
+        view.eyez() += rz * MOVE_SPEED;
+        moved = true;
+    }
+    if (input.key_down(GLFW_KEY_SPACE))
+    {
+        view.eyey() += VERTICAL_SPEED;
+        moved = true;
+    }
+    if (input.key_down(GLFW_KEY_C))
+    {
+        view.eyey() -= VERTICAL_SPEED;
+        moved = true;
     }
 
     if (moved)
     {
         view.update_center_from_yaw_pitch();
-        glutPostRedisplay();
     }
 }

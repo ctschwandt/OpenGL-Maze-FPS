@@ -6,11 +6,12 @@
 
 namespace mygllib
 {
+    class GLFWInput;
+
     class Mouse
     {
     public:
-        static void motion(int x, int y);
-        static void button(int button, int state, int x, int y);
+        static void update_from_input(const GLFWInput &input);
     };
 }
 

@@ -1,7 +1,7 @@
 #ifndef VIEWPORT_H
 #define VIEWPORT_H
 
-#include <GL/freeglut.h>
+#include <GL/glew.h>
 
 /*
   

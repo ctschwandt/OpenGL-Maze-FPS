@@ -4,7 +4,8 @@
 #define VIEW_H
 
 #include <iostream>
-#include <GL/freeglut.h>
+#include <GL/glew.h>
+#include <GL/glu.h>
 #include "config.h"
 
 namespace mygllib

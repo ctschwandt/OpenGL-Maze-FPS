@@ -1,8 +1,10 @@
 // File: main.cpp
 // Name: Cole Schwandt
 
+#include <exception>
 #include <iostream>
-#include <GL/freeglut.h>
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
 #include <cmath>
 #include <cstdlib>
 #include <vector>
@@ -10,6 +12,7 @@
 #include "Globals.h"
 #include "Maze.h"
 #include "mygllib/gl3d.h"
+#include "mygllib/GLFWInput.h"
 #include "mygllib/View.h"
 #include "mygllib/SingletonView.h"
 #include "mygllib/Reshape.h"
@@ -138,6 +141,37 @@ void draw_maze_columns()
 }
 
 //==============================================================
+// User Input
+//==============================================================
+void handle_function_keys(const mygllib::GLFWInput &input)
+{
+    static bool f1_down_previous = false;
+    static bool f2_down_previous = false;
+    static bool f3_down_previous = false;
+
+    bool f1_down = input.key_down(GLFW_KEY_F1);
+    bool f2_down = input.key_down(GLFW_KEY_F2);
+    bool f3_down = input.key_down(GLFW_KEY_F3);
+
+    if (f1_down && !f1_down_previous)
+    {
+        globals::draw_plane = !globals::draw_plane;
+    }
+    if (f2_down && !f2_down_previous)
+    {
+        globals::draw_axes = !globals::draw_axes;
+    }
+    if (f3_down && !f3_down_previous)
+    {
+        globals::draw_wire = !globals::draw_wire;
+    }
+
+    f1_down_previous = f1_down;
+    f2_down_previous = f2_down;
+    f3_down_previous = f3_down;
+}
+
+//==============================================================
 // Display
 //==============================================================
 void display()
@@ -178,22 +212,6 @@ void display()
     }
     glPopMatrix();
     
-    glutSwapBuffers();
-}
-
-//==============================================================
-// User Input
-//==============================================================
-void specialkeyboard(int key, int, int)
-{    
-    switch (key)
-    {
-        case GLUT_KEY_F1: globals::draw_plane = !globals::draw_plane; break;
-        case GLUT_KEY_F2: globals::draw_axes = !globals::draw_axes; break;
-        case GLUT_KEY_F3: globals::draw_wire = !globals::draw_wire; break;
-    }
-
-    glutPostRedisplay();
 }
 
 //==============================================================
@@ -201,22 +219,49 @@ void specialkeyboard(int key, int, int)
 //==============================================================
 int main(int argc, char ** argv)
 {
+    (void)argc;
+    (void)argv;
+
     maze.print();
     std::cout << std::endl;
-    
+
     srand((unsigned int) time(NULL));
     mygllib::WIN_W = 700;
     mygllib::WIN_H = 700;
-    mygllib::init3d();
+    GLFWwindow *window = nullptr;
+    try
+    {
+        window = mygllib::init3d();
+    }
+    catch (const std::exception &ex)
+    {
+        std::cerr << ex.what() << std::endl;
+        return -1;
+    }
+
+    mygllib::Reshape::reshape(mygllib::WIN_W, mygllib::WIN_H);
+    glfwSetFramebufferSizeCallback(window, [](GLFWwindow *, int w, int h)
+    {
+        mygllib::Reshape::reshape(w, h);
+    });
+
     init();
-    glutDisplayFunc(display);
-    glutKeyboardFunc(mygllib::Keyboard::keyboard);
-    glutSpecialFunc(specialkeyboard);
-    glutReshapeFunc(mygllib::Reshape::reshape);
-    glutPassiveMotionFunc(mygllib::Mouse::motion);
-    glutMouseFunc(mygllib::Mouse::button);
-    glutSetCursor(GLUT_CURSOR_NONE);
-    glutMainLoop();
-    
+    mygllib::GLFWInput input(window);
+
+    while (!glfwWindowShouldClose(window))
+    {
+        input.begin_frame();
+        glfwPollEvents();
+
+        handle_function_keys(input);
+        mygllib::Mouse::update_from_input(input);
+        mygllib::Keyboard::update_from_input(input);
+
+        display();
+        glfwSwapBuffers(window);
+    }
+
+    glfwTerminate();
+
     return 0;
 }

@@ -1,6 +1,10 @@
 #ifndef TEXT_H
 #define TEXT_H
 
+#include <string>
+
+#include <GL/glew.h>
+
 namespace mygllib
 {
     class Text
@@ -8,33 +12,28 @@ namespace mygllib
     public:
         Text(int x=0, int y=0,
              const std::string & s="",
-             void * font=GLUT_STROKE_ROMAN)
-            : x_(x), y_(y), s_(s), font_(font)
+             float scale=0.2f)
+            : x_(x), y_(y), s_(s), scale_(scale)
         {}
-        
+
         void draw() const
         {
-            glPushMatrix();
-            glTranslatef(x_, y_, 0);
-            glScalef(0.2, 0.2, 1);
-            for (unsigned int i = 0; i < s_.length(); i++)
-            {
-                glutStrokeCharacter(font_, s_[i]);
-            }
-            glPopMatrix();
+            // Text rendering via FreeGLUT was removed; this is a placeholder to
+            // avoid depending on GLUT. Implement font rendering here if needed.
+            (void)scale_;
         }
-        
+
         static void draw(int x, int y,
                          const std::string & s,
-                         void * font=GLUT_STROKE_ROMAN)
+                         float scale=0.2f)
         {
-            Text(x, y, s, font).draw();        
+            Text(x, y, s, scale).draw();
         }
-        
+
     private:
         int x_, y_;
         std::string s_;
-        void * font_;
+        float scale_;
     };
 }
 #endif

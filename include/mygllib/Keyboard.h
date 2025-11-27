@@ -8,10 +8,12 @@
 
 namespace mygllib
 {
+    class GLFWInput;
+
     class Keyboard
     {
     public:
-        static void keyboard(unsigned char key, int w, int h);
+        static void update_from_input(const GLFWInput &input);
     };
 
     class KeyboardBase
