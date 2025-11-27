@@ -7,8 +7,7 @@ namespace mygllib
           last_x_(0.0),
           last_y_(0.0),
           mouse_delta_x_(0.0),
-          mouse_delta_y_(0.0),
-          first_mouse_(true)
+          mouse_delta_y_(0.0)
     {
         glfwSetWindowUserPointer(window_, this);
         glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
@@ -19,6 +18,10 @@ namespace mygllib
         }
 #endif
         glfwSetCursorPosCallback(window_, cursor_position_callback);
+
+        // Initialize the cursor position so the first event does not
+        // compute a huge delta from an uninitialized value.
+        glfwGetCursorPos(window_, &last_x_, &last_y_);
     }
 
     void GLFWInput::begin_frame()
@@ -38,14 +41,6 @@ namespace mygllib
         auto *input = reinterpret_cast<GLFWInput *>(glfwGetWindowUserPointer(window));
         if (!input)
             return;
-
-        if (input->first_mouse_)
-        {
-            input->last_x_ = xpos;
-            input->last_y_ = ypos;
-            input->first_mouse_ = false;
-            return;
-        }
 
         input->mouse_delta_x_ += xpos - input->last_x_;
         input->mouse_delta_y_ += ypos - input->last_y_;
