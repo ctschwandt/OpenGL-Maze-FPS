@@ -10,20 +10,18 @@ namespace mygllib
           mouse_delta_y_(0.0),
           first_mouse_(true)
     {
-        // Hide and lock the cursor to the window (FPS-style)
-        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+        // Visible, normal cursor
+        glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-    #ifdef GLFW_RAW_MOUSE_MOTION
-        if (glfwRawMouseMotionSupported())
-        {
-            glfwSetInputMode(window_, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
-        }
-    #endif
+        // Initialize last_x_/last_y_ to current position
+        double xpos, ypos;
+        glfwGetCursorPos(window_, &xpos, &ypos);
+        last_x_ = xpos;
+        last_y_ = ypos;
     }
 
     void GLFWInput::begin_frame()
     {
-        // Query current cursor position
         double xpos, ypos;
         glfwGetCursorPos(window_, &xpos, &ypos);
 
@@ -37,7 +35,6 @@ namespace mygllib
             return;
         }
 
-        // Compute deltas since last frame
         double xoffset = xpos - last_x_;
         double yoffset = last_y_ - ypos; // invert Y so up is positive
 
