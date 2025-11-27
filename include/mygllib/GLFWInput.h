@@ -27,7 +27,6 @@ namespace mygllib
         double last_y_;
         double mouse_delta_x_;
         double mouse_delta_y_;
-        bool first_mouse_;
     };
 }
 
