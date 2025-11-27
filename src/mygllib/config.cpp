@@ -1,6 +1,6 @@
 // File: config.cpp
 
-#include <GL/freeglut.h>
+#include <GL/glew.h>
 #include "mygllib/config.h"
 
 namespace mygllib
@@ -15,9 +15,7 @@ namespace mygllib
     const char * WIN_TITLE = "OpenGL!!!";
 
     // Display mode
-    unsigned int DISPLAY_MODE = GLUT_DOUBLE
-                              | GLUT_DEPTH
-                              | GLUT_RGBA;
+    unsigned int DISPLAY_MODE = 0;
 
     // RGBA for clear color
     GLfloat CLEAR_COLOR_R = 1.0f;

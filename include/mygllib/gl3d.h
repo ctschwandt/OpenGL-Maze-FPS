@@ -3,7 +3,11 @@
 #ifndef GL3D_H
 #define GL3D_H
 
-#include <GL/freeglut.h>
+#include <stdexcept>
+
+#include <GL/glew.h>
+#include <GLFW/glfw3.h>
+
 #include "config.h"
 #include "View.h"
 #include "Material.h"
@@ -13,19 +17,32 @@ namespace mygllib
     using namespace mygllib;
 
     inline
-    void init3d()
+    GLFWwindow * init3d()
     {
-        int argc = 0;
-        char ** argv = NULL;
-        glutInit(&argc, argv);    
-        glutInitWindowPosition(WIN_X, WIN_Y);
-        glutInitWindowSize(WIN_W, WIN_H);
-        glutInitDisplayMode(GLUT_DEPTH
-                            | GLUT_DOUBLE
-                            | GLUT_RGBA
-                            | GLUT_STENCIL
-            );
-        glutCreateWindow(WIN_TITLE);
+        if (!glfwInit())
+        {
+            throw std::runtime_error("Failed to initialize GLFW");
+        }
+
+        GLFWwindow *window = glfwCreateWindow(WIN_W, WIN_H, WIN_TITLE, nullptr, nullptr);
+        if (!window)
+        {
+            glfwTerminate();
+            throw std::runtime_error("Failed to create GLFW window");
+        }
+
+        glfwMakeContextCurrent(window);
+        glfwSwapInterval(1);
+
+        glewExperimental = GL_TRUE;
+        if (glewInit() != GLEW_OK)
+        {
+            glfwDestroyWindow(window);
+            glfwTerminate();
+            throw std::runtime_error("Failed to initialize GLEW");
+        }
+
+        return window;
     }
 
     //-------------------------------------------------------------------------
@@ -53,10 +70,10 @@ namespace mygllib
         {
             glColor3f(1, 0, 0); // red
             glVertex3f(0, 0, 0);
-            glVertex3f(length, 0, 0); 
+            glVertex3f(length, 0, 0);
             glColor3f(0, 1, 0); // green
             glVertex3f(0, 0, 0);
-            glVertex3f(0, length, 0); 
+            glVertex3f(0, length, 0);
             glColor3f(0, 0, 1); // blue
             glVertex3f(0, 0, 0);
             glVertex3f(0, 0, length);

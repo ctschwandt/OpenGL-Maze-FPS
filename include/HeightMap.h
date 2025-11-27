@@ -4,7 +4,7 @@
 #ifndef HEIGHTMAP_H
 #define HEIGHTMAP_H
 
-#include <GL/freeglut.h>
+#include <GL/glew.h>
 #include <iostream>
 #include <cmath>
 #include <cstdlib>

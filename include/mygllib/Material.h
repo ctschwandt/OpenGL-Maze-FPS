@@ -1,7 +1,8 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
 
-#include <GL/freeglut.h>
+#include <GL/glew.h>
+#include <iostream>
 
 namespace mygllib
 {
