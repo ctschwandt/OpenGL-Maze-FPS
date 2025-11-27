@@ -5,8 +5,8 @@
 
 namespace globals
 {
-    bool draw_plane = false;
-    bool draw_axes = false;
+    bool draw_plane = true;
+    bool draw_axes = true;
     bool draw_wire = false;
 
     GLint g_n = 6;

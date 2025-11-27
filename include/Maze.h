@@ -9,6 +9,7 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <stdexcept>
 
 // directions North, East, South, West
 enum DIR
@@ -19,7 +20,6 @@ enum DIR
 class Maze
 {
 public:
-
     // internal classes //
     class Cell;
     class Path;
@@ -29,23 +29,21 @@ public:
     {
     public:
         Cell(int row = 0, int col = 0, bool visit = false)
-            : r(row), c(col), visited(visit),
-              next(NULL), neighbors(new Cell * [DIR_SIZE]())
-        {}
-        ~Cell()
+            : r(row),
+              c(col),
+              visited(visit),
+              next(nullptr)
         {
-            if (this != NULL)
-            {
-                delete [] neighbors;  // Deallocate the neighbors array
-            }
+            for (int i = 0; i < DIR_SIZE; ++i)
+                neighbors[i] = nullptr;
         }
 
         // member variables //
-        int r, c;
-        bool visited;
+        int   r, c;
+        bool  visited;
         // pointers to neighbors
-        Cell * next;
-        Cell ** neighbors; // 0N, 1E, 2S, 3W      
+        Cell* next;
+        Cell* neighbors[DIR_SIZE]; // 0N, 1E, 2S, 3W
     };
 
     // Used to backtrack steps during maze generation
@@ -53,50 +51,58 @@ public:
     {
     public:
         Path()
-            : phead(NULL)
+            : phead(nullptr)
         {}
-        ~Path()
-        {}
+        ~Path() = default;
 
         // methods //
-        void pop();  // delete_head() // return type void?
-        void push(Cell *); // insert_head() // return type void?
-        Cell * top();// returns head r and c?
+        void  pop();           // delete head
+        void  push(Cell*);     // insert head
+        Cell* top();           // returns head
+
         // member variable //
-        Cell * phead;
+        Cell* phead;
     };
 
     // Maze components //
-    Maze(int size = 0)
-        : cells(size * size), path(), n(size)
-    {}
-    ~Maze()
-    {}
+    Maze(int size = 0, int r = 0, int c = 0)
+        : cells(size * size),
+          path(),
+          n(size)
+    {
+        init(r, c);
+    }
+
+    ~Maze() = default;
 
     // methods //
-    void init(int, int);
-    void print();
-    Cell & operator()(int, int);
-    void move_once();
-    
+    void   init(int start_r, int start_c);
+    void   print();
+    Cell & operator()(int r, int c);
+    void   move_once();
+    int tiles_n() const { return 2 * n + 1; }
+    bool is_wall_tile(int tr, int tc) const;
+
     // member variables //
-    std::vector< Cell > cells;
-    Path path;
-    int n;
-    static Cell * SENTINEL_CELL;
-    static const int DELTA[4][2];
+    std::vector<Cell> cells;
+    Path              path;
+    int               n;
+
+    static Cell*      SENTINEL_CELL;
+    static const int  DELTA[4][2];
 
     // cell print operator<<
     friend std::ostream & operator<<(std::ostream & cout,
                                      const Maze::Cell & cell);
     // maze print operator<<
     friend std::ostream & operator<<(std::ostream & cout,
-                                    const Maze & maze);
+                                     const Maze & maze);
 };
 
 
+// debug helpers
 void debug_println(const Maze::Cell &);
 void debug_println(const Maze::Path &);
 void debug_println(const Maze &);
 
-#endif
+#endif // MAZE_H

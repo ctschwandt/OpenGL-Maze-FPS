@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "Globals.h"
+#include "Maze.h"
 #include "mygllib/gl3d.h"
 #include "mygllib/View.h"
 #include "mygllib/SingletonView.h"
@@ -19,6 +20,11 @@
 #include "mygllib/Material.h"
 #include "mygllib/Light.h"
 #include "myglm.h"
+
+//==============================================================
+// Globals
+//==============================================================
+Maze maze(5, 0, 0);
 
 //==============================================================
 // Lighting
@@ -31,12 +37,12 @@ void init()
     //=============================
     mygllib::View & view = *(mygllib::SingletonView::getInstance());
 
-    GLfloat span = GLfloat(globals::g_heightmap.N_ - 1);  // size of terrain in x,z
+    // GLfloat span = GLfloat(globals::g_heightmap.N_ - 1);  // size of terrain in x,z
     
-    view.eyex() = span * 0.5f;  // center in x
-    view.eyey() = span;
-    view.eyez() = span;
-    view.zFar() = span * 10.0f; // 10 times current terrain size
+    // view.eyex() = span * 0.5f;  // center in x
+    // view.eyey() = span;
+    // view.eyez() = span;
+    // view.zFar() = span * 10.0f; // 10 times current terrain size
 
     view.set_projection();
     view.lookat();
@@ -53,277 +59,92 @@ void init()
     glColorMaterial(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE);
 
     glShadeModel(GL_SMOOTH);
-    glEnable(GL_NORMALIZE);   // because we scale the model
+    glEnable(GL_NORMALIZE);
 
-    glFrontFace(GL_CCW);
+    //glFrontFace(GL_CCW);
 }
 
 //==============================================================
-// Simple 3D vector for normals etc.
+// Drawing Helpers
 //==============================================================
-struct Vec3f
+// Draw an axis-aligned box given center and half-sizes
+void draw_box(float cx, float cy, float cz,
+              float hx, float hy, float hz)
 {
-    GLfloat x, y, z;
+    float x0 = cx - hx, x1 = cx + hx;
+    float y0 = cy - hy, y1 = cy + hy;
+    float z0 = cz - hz, z1 = cz + hz;
 
-    Vec3f(GLfloat X = 0.0f, GLfloat Y = 0.0f, GLfloat Z = 0.0f)
-        : x(X), y(Y), z(Z) {}
+    glBegin(GL_QUADS);
 
-    Vec3f operator+(const Vec3f & o) const
-    {
-        return Vec3f(x + o.x, y + o.y, z + o.z);
-    }
+    // front (z1)
+    glNormal3f(0, 0, 1);
+    glVertex3f(x0, y0, z1);
+    glVertex3f(x1, y0, z1);
+    glVertex3f(x1, y1, z1);
+    glVertex3f(x0, y1, z1);
 
-    Vec3f & operator+=(const Vec3f & o)
-    {
-        x += o.x;
-        y += o.y;
-        z += o.z;
-        return *this;
-    }
+    // back (z0)
+    glNormal3f(0, 0,-1);
+    glVertex3f(x1, y0, z0);
+    glVertex3f(x0, y0, z0);
+    glVertex3f(x0, y1, z0);
+    glVertex3f(x1, y1, z0);
 
-    Vec3f operator-(const Vec3f & o) const
-    {
-        return Vec3f(x - o.x, y - o.y, z - o.z);
-    }
+    // left (x0)
+    glNormal3f(-1, 0, 0);
+    glVertex3f(x0, y0, z0);
+    glVertex3f(x0, y0, z1);
+    glVertex3f(x0, y1, z1);
+    glVertex3f(x0, y1, z0);
 
-    Vec3f operator*(GLfloat s) const
-    {
-        return Vec3f(x * s, y * s, z * s);
-    }
-};
+    // right (x1)
+    glNormal3f(1, 0, 0);
+    glVertex3f(x1, y0, z1);
+    glVertex3f(x1, y0, z0);
+    glVertex3f(x1, y1, z0);
+    glVertex3f(x1, y1, z1);
 
-// cross product u × v
-inline Vec3f cross(const Vec3f & u, const Vec3f & v)
-{
-    return Vec3f(
-        u.y * v.z - u.z * v.y,
-        u.z * v.x - u.x * v.z,
-        u.x * v.y - u.y * v.x
-    );
+    // top (y1)
+    glNormal3f(0, 1, 0);
+    glVertex3f(x0, y1, z1);
+    glVertex3f(x1, y1, z1);
+    glVertex3f(x1, y1, z0);
+    glVertex3f(x0, y1, z0);
+
+    // bottom (y0)
+    glNormal3f(0,-1, 0);
+    glVertex3f(x0, y0, z0);
+    glVertex3f(x1, y0, z0);
+    glVertex3f(x1, y0, z1);
+    glVertex3f(x0, y0, z1);
+
+    glEnd();
 }
 
-inline Vec3f normalize(const Vec3f & v)
+void draw_maze_columns()
 {
-    GLfloat len2 = v.x * v.x + v.y * v.y + v.z * v.z;
-    if (len2 <= 1e-8f)
+    float H     = 3.0f;      // wall height
+    float hy    = H / 2.0f;
+    int   tileN = maze.tiles_n();
+
+    for (int tr = 0; tr < tileN; ++tr)
     {
-        // default up if degenerate
-        return Vec3f(0.0f, 1.0f, 0.0f);
-    }
-    GLfloat inv = 1.0f / std::sqrt(len2);
-    return Vec3f(v.x * inv, v.y * inv, v.z * inv);
-}
-
-//==============================================================
-// Build smooth per-vertex normals from the heightmap.
-// normals[x][z] = averaged normal at grid vertex (x,z)
-//==============================================================
-void compute_vertex_normals(const HeightMap & hm,
-                            std::vector<std::vector<Vec3f>> & normals)
-{
-    const GLint N = hm.N_;
-
-    // allocate and zero
-    normals.assign(N, std::vector<Vec3f>(N, Vec3f()));
-
-    for (GLint z = 0; z < N - 1; ++z)
-    {
-        for (GLint x = 0; x < N - 1; ++x)
+        for (int tc = 0; tc < tileN; ++tc)
         {
-            // positions in grid space (before scaling/translation)
-            Vec3f p00(GLfloat(x),     hm.map_[x    ][z    ], GLfloat(z));
-            Vec3f p01(GLfloat(x),     hm.map_[x    ][z + 1], GLfloat(z + 1));
-            Vec3f p10(GLfloat(x + 1), hm.map_[x + 1][z    ], GLfloat(z));
-            Vec3f p11(GLfloat(x + 1), hm.map_[x + 1][z + 1], GLfloat(z + 1));
+            if (!maze.is_wall_tile(tr, tc))
+                continue;
 
-            // Triangle 1: (x,z) -> (x,z+1) -> (x+1,z) (CCW from above)
-            {
-                Vec3f u = p01 - p00;
-                Vec3f v = p10 - p00;
-                Vec3f n = normalize(cross(u, v));
+            // Each tile is a 1x1 in XZ
+            float cx = tc + 0.5f;
+            float cz = tr + 0.5f;
+            float cy = hy;  // center at y = 1.5
 
-                normals[x    ][z    ] += n; // p00
-                normals[x    ][z + 1] += n; // p01
-                normals[x + 1][z    ] += n; // p10
-            }
-
-            // Triangle 2: (x+1,z) -> (x,z+1) -> (x+1,z+1)   (CCW from above)
-            {
-                Vec3f u = p01 - p10;
-                Vec3f v = p11 - p10;
-                Vec3f n = normalize(cross(u, v));
-
-                normals[x + 1][z    ] += n; // p10
-                normals[x    ][z + 1] += n; // p01
-                normals[x + 1][z + 1] += n; // p11
-            }
+            // full 1x1 footprint in XZ, height 3
+            draw_box(cx, cy, cz,
+                     0.5f, hy, 0.5f);
         }
     }
-
-    // normalize all vertex normals
-    for (GLint z = 0; z < N; ++z)
-    {
-        for (GLint x = 0; x < N; ++x)
-        {
-            normals[x][z] = normalize(normals[x][z]);
-        }
-    }
-}
-
-//==============================================================
-// Glut drawing helpers
-//==============================================================
-void build_heightmap_mesh(const HeightMap & hm,
-                          std::vector<GLfloat> & vertices,
-                          std::vector<GLfloat> & normals,
-                          std::vector<GLfloat> & colors,
-                          std::vector<GLuint>  & indices)
-{
-    const GLint N = hm.N_;
-    const GLint numVerts = N * N;
-
-    // --- positions and height range (for color) ---
-    vertices.resize(numVerts * 3);
-
-    GLfloat minH = hm.map_[0][0];
-    GLfloat maxH = hm.map_[0][0];
-
-    for (GLint z = 0; z < N; ++z)
-    {
-        for (GLint x = 0; x < N; ++x)
-        {
-            GLint idx = z * N + x;
-            GLfloat vx = GLfloat(x);
-            GLfloat vy = hm.map_[x][z];
-            GLfloat vz = GLfloat(z);
-
-            vertices[3*idx + 0] = vx;
-            vertices[3*idx + 1] = vy;
-            vertices[3*idx + 2] = vz;
-
-            if (vy < minH) minH = vy;
-            if (vy > maxH) maxH = vy;
-        }
-    }
-
-    GLfloat rangeH = (maxH > minH) ? (maxH - minH) : 1.0f;
-
-    // --- vertex normals via your Vec3f helper ---
-    std::vector<std::vector<Vec3f>> vnormals;
-    compute_vertex_normals(hm, vnormals);
-
-    normals.resize(numVerts * 3);
-    colors.resize(numVerts * 3);
-
-    for (GLint z = 0; z < N; ++z)
-    {
-        for (GLint x = 0; x < N; ++x)
-        {
-            GLint idx = z * N + x;
-
-            // normal
-            const Vec3f & n = vnormals[x][z];
-            normals[3*idx + 0] = n.x;
-            normals[3*idx + 1] = n.y;
-            normals[3*idx + 2] = n.z;
-
-            // height-based color (near white scaled by height)
-            GLfloat vy = hm.map_[x][z];
-            GLfloat t = (vy - minH) / rangeH;   // in [0, 1]
-            GLfloat base = 0.9f * t;
-            colors[3*idx + 0] = base;
-            colors[3*idx + 1] = base;
-            colors[3*idx + 2] = base;
-        }
-    }
-
-    // --- triangle indices ---
-    indices.clear();
-    indices.reserve((N - 1) * (N - 1) * 6); // 2 triangles * 3 verts each
-
-    for (GLint z = 0; z < N - 1; ++z)
-    {
-        for (GLint x = 0; x < N - 1; ++x)
-        {
-            GLuint i00 = z     * N + x;
-            GLuint i01 = (z+1) * N + x;
-            GLuint i10 = z     * N + (x+1);
-            GLuint i11 = (z+1) * N + (x+1);
-
-            // Triangle 1: (x,z) -> (x,z+1) -> (x+1,z)  (CCW from above)
-            indices.push_back(i00);
-            indices.push_back(i01);
-            indices.push_back(i10);
-
-            // Triangle 2: (x+1,z) -> (x,z+1) -> (x+1,z+1)  (CCW)
-            indices.push_back(i10);
-            indices.push_back(i01);
-            indices.push_back(i11);
-        }
-    }
-}
-
-void draw_heightmap_wireframe(const HeightMap & hm)
-{
-    static std::vector<GLfloat> vertices;
-    static std::vector<GLfloat> dummy_normals;
-    static std::vector<GLfloat> dummy_colors;
-    static std::vector<GLuint>  indices;
-
-    // Rebuild mesh data (positions + indices). Normals/colors are ignored here.
-    build_heightmap_mesh(hm, vertices, dummy_normals, dummy_colors, indices);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);  // wireframe
-
-    // For wireframe, simple flat color is fine
-    glDisable(GL_LIGHTING);
-    glColor3f(0.0f, 0.0f, 0.0f);
-
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glVertexPointer(3, GL_FLOAT, 0, vertices.data());
-
-    glDrawElements(GL_TRIANGLES,
-                   static_cast<GLsizei>(indices.size()),
-                   GL_UNSIGNED_INT,
-                   indices.data());
-
-    glDisableClientState(GL_VERTEX_ARRAY);
-
-    glEnable(GL_LIGHTING);                       // restore if you use lighting elsewhere
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);  // restore fill mode
-}
-
-//==============================================================
-// Draw the terrain as a lit surface using vertex arrays + glDrawElements
-//==============================================================
-void draw_heightmap_surface(const HeightMap & hm)
-{
-    static std::vector<GLfloat> vertices;
-    static std::vector<GLfloat> normals;
-    static std::vector<GLfloat> colors;
-    static std::vector<GLuint>  indices;
-
-    build_heightmap_mesh(hm, vertices, normals, colors, indices);
-
-    glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-    glFrontFace(GL_CCW);
-
-    glEnableClientState(GL_VERTEX_ARRAY);
-    glEnableClientState(GL_NORMAL_ARRAY);
-    glEnableClientState(GL_COLOR_ARRAY);
-
-    glVertexPointer(3, GL_FLOAT, 0, vertices.data());
-    glNormalPointer(GL_FLOAT, 0, normals.data());
-    glColorPointer(3, GL_FLOAT, 0, colors.data());
-
-    glDrawElements(GL_TRIANGLES,
-                   static_cast<GLsizei>(indices.size()),
-                   GL_UNSIGNED_INT,
-                   indices.data());
-
-    glDisableClientState(GL_COLOR_ARRAY);
-    glDisableClientState(GL_NORMAL_ARRAY);
-    glDisableClientState(GL_VERTEX_ARRAY);
 }
 
 //==============================================================
@@ -354,17 +175,11 @@ void display()
     //glShadeModel(GL_SMOOTH);
     //light.set_position();
     
-    glColor3f(0.0f, 0.0f, 0.0f);
+    // draw maze columns
+    glColor3f(0.2f, 0.2f, 0.2f);
     glPushMatrix();
     {
-        GLfloat s = globals::g_A / GLfloat(globals::g_heightmap.N_ - 1);
-        GLfloat half = 0.5f * (globals::g_heightmap.N_ - 1);
-        glScalef(s, 1.0f, s);
-        glTranslatef(-half, 0.0f, -half);
-        if (globals::draw_wire)
-            draw_heightmap_wireframe(globals::g_heightmap);
-        else
-            draw_heightmap_surface(globals::g_heightmap);
+        draw_maze_columns();
     }
     glPopMatrix();
     
@@ -390,7 +205,10 @@ void specialkeyboard(int key, int, int)
 // main
 //==============================================================
 int main(int argc, char ** argv)
-{   
+{
+    maze.print();
+    std::cout << std::endl;
+    
     srand((unsigned int) time(NULL));
     mygllib::WIN_W = 700;
     mygllib::WIN_H = 700;
