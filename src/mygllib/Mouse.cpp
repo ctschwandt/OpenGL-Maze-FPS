@@ -32,7 +32,7 @@ void mygllib::Mouse::update_from_input(const GLFWInput &input, float /*dt*/)
     mygllib::View & view = *(mygllib::SingletonView::getInstance());
 
     view.yaw()   += static_cast<float>(dx) * MOUSE_SENS;
-    view.pitch() -= static_cast<float>(dy) * MOUSE_SENS;
+    view.pitch() += static_cast<float>(dy) * MOUSE_SENS;
 
     std::cout << "(yaw, pitch): " << view.yaw() << ' ' << view.pitch() << std::endl;
 
