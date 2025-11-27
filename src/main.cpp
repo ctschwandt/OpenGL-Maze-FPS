@@ -221,48 +221,64 @@ int main(int argc, char ** argv)
 {
     (void)argc;
     (void)argv;
-    srand((unsigned int) time(NULL));
+    std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
+    // ----- Maze generation (text debug) -----
     maze.init(0, 0);
     maze.print();
     std::cout << std::endl;
 
+    // ----- Create window & GL context -----
     mygllib::WIN_W = 700;
     mygllib::WIN_H = 700;
     GLFWwindow * window = nullptr;
+
     try
     {
         window = mygllib::init3d();
     }
-    catch (const std::exception &ex)
+    catch (const std::exception & ex)
     {
         std::cerr << ex.what() << std::endl;
         return -1;
     }
 
+    // Initial reshape
     mygllib::Reshape::reshape(mygllib::WIN_W, mygllib::WIN_H);
-    glfwSetFramebufferSizeCallback(window, [](GLFWwindow *, int w, int h)
-    {
-        mygllib::Reshape::reshape(w, h);
-    });
+
+    // Resize callback
+    glfwSetFramebufferSizeCallback(window,
+        [](GLFWwindow *, int w, int h)
+        {
+            mygllib::Reshape::reshape(w, h);
+        });
 
     init();
+
+    // ----- Input wrapper -----
     mygllib::GLFWInput input(window);
 
+    // Timing for dt
+    double lastTime = glfwGetTime();
+
+    // ----- Main loop -----
     while (!glfwWindowShouldClose(window))
     {
-        input.begin_frame();
-        glfwPollEvents();
+        double currentTime = glfwGetTime();
+        float dt = static_cast<float>(currentTime - lastTime);
+        lastTime = currentTime;
+
+        glfwPollEvents();         // 1) let GLFW update its internal cursor state
+        input.begin_frame();      // 2) sample cursor and compute dx/dy for this frame
 
         handle_function_keys(input);
         mygllib::Mouse::update_from_input(input);
-        mygllib::Keyboard::update_from_input(input);
+        mygllib::Keyboard::update_from_input(input, dt);
 
         display();
         glfwSwapBuffers(window);
     }
 
     glfwTerminate();
-
     return 0;
 }

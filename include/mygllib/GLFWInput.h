@@ -10,8 +10,10 @@ namespace mygllib
     public:
         explicit GLFWInput(GLFWwindow *window);
 
+        // Call once per frame (after glfwPollEvents)
         void begin_frame();
 
+        // Per-frame mouse deltas (in pixels)
         double mouse_delta_x() const { return mouse_delta_x_; }
         double mouse_delta_y() const { return mouse_delta_y_; }
 
@@ -20,13 +22,16 @@ namespace mygllib
         GLFWwindow * window() const { return window_; }
 
     private:
-        static void cursor_position_callback(GLFWwindow *window, double xpos, double ypos);
-
         GLFWwindow *window_;
+
+        // Last cursor position
         double last_x_;
         double last_y_;
+
+        // Per-frame deltas
         double mouse_delta_x_;
         double mouse_delta_y_;
+
+        bool   first_mouse_;
     };
 }
-

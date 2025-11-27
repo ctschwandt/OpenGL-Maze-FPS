@@ -13,7 +13,7 @@ namespace mygllib
     class Keyboard
     {
     public:
-        static void update_from_input(const GLFWInput &input);
+        static void update_from_input(const GLFWInput &input, float dt);
     };
 
     class KeyboardBase

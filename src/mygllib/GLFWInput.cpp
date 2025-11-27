@@ -7,27 +7,45 @@ namespace mygllib
           last_x_(0.0),
           last_y_(0.0),
           mouse_delta_x_(0.0),
-          mouse_delta_y_(0.0)
+          mouse_delta_y_(0.0),
+          first_mouse_(true)
     {
-        glfwSetWindowUserPointer(window_, this);
+        // Hide and lock the cursor to the window (FPS-style)
         glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-#ifdef GLFW_RAW_MOUSE_MOTION
+
+    #ifdef GLFW_RAW_MOUSE_MOTION
         if (glfwRawMouseMotionSupported())
         {
             glfwSetInputMode(window_, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
         }
-#endif
-        glfwSetCursorPosCallback(window_, cursor_position_callback);
-
-        // Initialize the cursor position so the first event does not
-        // compute a huge delta from an uninitialized value.
-        glfwGetCursorPos(window_, &last_x_, &last_y_);
+    #endif
     }
 
     void GLFWInput::begin_frame()
     {
-        mouse_delta_x_ = 0.0;
-        mouse_delta_y_ = 0.0;
+        // Query current cursor position
+        double xpos, ypos;
+        glfwGetCursorPos(window_, &xpos, &ypos);
+
+        if (first_mouse_)
+        {
+            last_x_ = xpos;
+            last_y_ = ypos;
+            mouse_delta_x_ = 0.0;
+            mouse_delta_y_ = 0.0;
+            first_mouse_ = false;
+            return;
+        }
+
+        // Compute deltas since last frame
+        double xoffset = xpos - last_x_;
+        double yoffset = last_y_ - ypos; // invert Y so up is positive
+
+        last_x_ = xpos;
+        last_y_ = ypos;
+
+        mouse_delta_x_ = xoffset;
+        mouse_delta_y_ = yoffset;
     }
 
     bool GLFWInput::key_down(int key) const
@@ -35,18 +53,4 @@ namespace mygllib
         int state = glfwGetKey(window_, key);
         return state == GLFW_PRESS || state == GLFW_REPEAT;
     }
-
-    void GLFWInput::cursor_position_callback(GLFWwindow *window, double xpos, double ypos)
-    {
-        auto *input = reinterpret_cast<GLFWInput *>(glfwGetWindowUserPointer(window));
-        if (!input)
-            return;
-
-        input->mouse_delta_x_ += xpos - input->last_x_;
-        input->mouse_delta_y_ += ypos - input->last_y_;
-
-        input->last_x_ = xpos;
-        input->last_y_ = ypos;
-    }
 }
-

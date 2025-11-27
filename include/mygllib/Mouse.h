@@ -11,7 +11,7 @@ namespace mygllib
     class Mouse
     {
     public:
-        static void update_from_input(const GLFWInput &input);
+        static void update_from_input(const GLFWInput & input);
     };
 }
 

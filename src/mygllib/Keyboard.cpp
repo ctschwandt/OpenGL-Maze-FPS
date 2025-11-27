@@ -11,11 +11,11 @@
 
 namespace
 {
-    const float MOVE_SPEED = 0.2f;
-    const float VERTICAL_SPEED = 0.2f;
+    const float MOVE_SPEED     = 3.0f; // units per second
+    const float VERTICAL_SPEED = 3.0f; // units per second
 }
 
-void mygllib::Keyboard::update_from_input(const GLFWInput &input)
+void mygllib::Keyboard::update_from_input(const GLFWInput &input, float dt)
 {
     mygllib::View & view = *(mygllib::SingletonView::getInstance());
 
@@ -31,43 +31,45 @@ void mygllib::Keyboard::update_from_input(const GLFWInput &input)
     {
         glfwSetWindowShouldClose(input.window(), GLFW_TRUE);
     }
+
+    float moveStep     = MOVE_SPEED     * dt;
+    float verticalStep = VERTICAL_SPEED * dt;
+
     if (input.key_down(GLFW_KEY_W))
     {
-        view.eyex() += fx * MOVE_SPEED;
-        view.eyez() += fz * MOVE_SPEED;
+        view.eyex() += fx * moveStep;
+        view.eyez() += fz * moveStep;
         moved = true;
     }
     if (input.key_down(GLFW_KEY_S))
     {
-        view.eyex() -= fx * MOVE_SPEED;
-        view.eyez() -= fz * MOVE_SPEED;
+        view.eyex() -= fx * moveStep;
+        view.eyez() -= fz * moveStep;
         moved = true;
     }
     if (input.key_down(GLFW_KEY_A))
     {
-        view.eyex() -= rx * MOVE_SPEED;
-        view.eyez() -= rz * MOVE_SPEED;
+        view.eyex() -= rx * moveStep;
+        view.eyez() -= rz * moveStep;
         moved = true;
     }
     if (input.key_down(GLFW_KEY_D))
     {
-        view.eyex() += rx * MOVE_SPEED;
-        view.eyez() += rz * MOVE_SPEED;
+        view.eyex() += rx * moveStep;
+        view.eyez() += rz * moveStep;
         moved = true;
     }
     if (input.key_down(GLFW_KEY_SPACE))
     {
-        view.eyey() += VERTICAL_SPEED;
+        view.eyey() += verticalStep;
         moved = true;
     }
     if (input.key_down(GLFW_KEY_C))
     {
-        view.eyey() -= VERTICAL_SPEED;
+        view.eyey() -= verticalStep;
         moved = true;
     }
 
     if (moved)
-    {
         view.update_center_from_yaw_pitch();
-    }
 }
