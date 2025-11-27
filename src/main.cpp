@@ -25,7 +25,7 @@
 //==============================================================
 // Globals
 //==============================================================
-Maze maze(5, 0, 0);
+Maze maze(5);
 
 //==============================================================
 // Lighting
@@ -119,7 +119,7 @@ void draw_maze_columns()
 {
     float H     = 1.5f;      // wall height in logical units
     float hy    = H / 2.0f;
-    int   tileN = maze.tiles_n();   // = 2*n + 1
+    int   tileN = maze.tiles_n;   // = 2*n + 1
 
     for (int tr = 0; tr < tileN; ++tr)
     {
@@ -186,7 +186,7 @@ void display()
     glLineWidth(1.0f);
 
     const float S = 3.0f;
-    float maze_span = S * maze.N;
+    float maze_span = S * maze.tiles_n;
 
     if (globals::draw_plane)
     {
@@ -221,14 +221,15 @@ int main(int argc, char ** argv)
 {
     (void)argc;
     (void)argv;
+    srand((unsigned int) time(NULL));
 
+    maze.init(0, 0);
     maze.print();
     std::cout << std::endl;
 
-    srand((unsigned int) time(NULL));
     mygllib::WIN_W = 700;
     mygllib::WIN_H = 700;
-    GLFWwindow *window = nullptr;
+    GLFWwindow * window = nullptr;
     try
     {
         window = mygllib::init3d();

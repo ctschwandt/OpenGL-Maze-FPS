@@ -54,21 +54,21 @@ namespace mygllib
         float   eyey() const      { return eyey_; }
         float & eyez()            { return eyez_; }
         float   eyez() const      { return eyez_; }
-        void    eye(float x, float y, float z) { eyex_ = x; eyey_ = y; eyex_ = z; }
+        void    eye(float x, float y, float z) { eyex_ = x; eyey_ = y; eyez_ = z; }
         float & refx()            { return refx_; }
         float   refx() const      { return refx_; }
         float & refy()            { return refy_; }
         float   refy() const      { return refy_; }
         float & refz()            { return refz_; }
         float   refz() const      { return refz_; }
-        void    ref(float x, float y, float z) { refx_ = x; refy_ = y; refx_ = z; }
+        void ref(float x, float y, float z) { refx_ = x; refy_ = y; refz_ = z; }
         float & upx()             { return upx_; }
         float   upx() const       { return upx_; }
         float & upy()             { return upy_; }
         float   upy() const       { return upy_; }
         float & upz()             { return upz_; }
         float   upz() const       { return upz_; }
-        void    up(float x, float y, float z) { upx_ = x; upy_ = y; upx_ = z; }
+        void up (float x, float y, float z) { upx_  = x; upy_  = y; upz_  = z; }
         float & fovy()            { return fovy_; }
         float   fovy() const      { return fovy_; }
         float & aspect()          { return aspect_; }
@@ -149,7 +149,7 @@ namespace mygllib
              << " eye:"
              << '(' << v.eyex() << ',' << v.eyey() << ',' << v.eyez() << "),"
              << " ref:"
-             << '(' << v.refx() << ',' << v.refy() << ',' << v.refy() << "),"
+             << '(' << v.refx() << ',' << v.refy() << ',' << v.refz() << "),"
              << " up:"
              << '(' << v.upx() << ',' << v.upy() << ',' << v.upz() << "),"
              << " perpective:";

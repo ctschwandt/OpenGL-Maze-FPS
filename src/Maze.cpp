@@ -306,7 +306,7 @@ bool Maze::is_wall_tile(int tr, int tc) const
     }
 
     // Vertical edge (between two horizontal neighbor cells)
-    // tr odd, tc even → between cell (r, c-1) and (r, c)
+    // tr odd, tc even -> between cell (r, c-1) and (r, c)
     if (tr % 2 == 1 && tc % 2 == 0)
     {
         int cRight = tc / 2;          // cell column to the right
