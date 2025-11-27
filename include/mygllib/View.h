@@ -37,13 +37,14 @@ namespace mygllib
         View(float eyex=2, float eyey=2, float eyez=2,
              float refx=0, float refy=0, float refz=0,
              float upx=0, float upy=1, float upz=0,
-             Projection type=PERSPECTIVE, 
+             Projection type=PERSPECTIVE,
              float fovy=90, float aspect=1, float zNear=0.1, float zFar=1000)
             : eyex_(eyex), eyey_(eyey), eyez_(eyez),
               refx_(refx), refy_(refy), refz_(refz),
               upx_(upx), upy_(upy), upz_(upz),
               type_(type),
-              fovy_(fovy), aspect_(aspect), zNear_(zNear), zFar_(zFar)
+              fovy_(fovy), aspect_(aspect), zNear_(zNear), zFar_(zFar),
+              yaw_(0.0f), pitch_(0.0f)
         {}
 
         float & eyex()            { return eyex_; }
@@ -77,6 +78,12 @@ namespace mygllib
         float   zFar() const      { return zFar_; }
         Projection & type()       { return type_; }
         Projection   type() const { return type_; }
+
+        float & yaw()             { return yaw_; }
+        const float & yaw() const { return yaw_; }
+
+        float & pitch()             { return pitch_; }
+        const float & pitch() const { return pitch_; }
 
         void lookat() const
         {
@@ -123,12 +130,15 @@ namespace mygllib
             glMatrixMode(GL_MODELVIEW);
         }
 
+        void update_center_from_yaw_pitch();
+
     private:
         float eyex_, eyey_, eyez_;           // coordinates of eye
         float refx_, refy_, refz_;           // reference point of eye
         float upx_, upy_, upz_;              // up vector of eye
         Projection type_;                    // ORTHOGONAL/PERSPECTIVE viewing
         float fovy_, aspect_, zNear_, zFar_; // Params for perspective view
+        float yaw_, pitch_;
     };
 
     inline

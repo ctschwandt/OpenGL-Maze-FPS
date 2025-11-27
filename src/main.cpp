@@ -17,6 +17,7 @@
 #include "mygllib/SingletonView.h"
 #include "mygllib/Reshape.h"
 #include "mygllib/Keyboard.h"
+#include "mygllib/Mouse.h"
 #include "mygllib/Material.h"
 #include "mygllib/Light.h"
 #include "myglm.h"
@@ -37,15 +38,7 @@ void init()
     //=============================
     mygllib::View & view = *(mygllib::SingletonView::getInstance());
 
-    // GLfloat span = GLfloat(globals::g_heightmap.N_ - 1);  // size of terrain in x,z
-    
-    // view.eyex() = span * 0.5f;  // center in x
-    // view.eyey() = span;
-    // view.eyez() = span;
-    // view.zFar() = span * 10.0f; // 10 times current terrain size
-
-    view.set_projection();
-    view.lookat();
+    view.update_center_from_yaw_pitch();
 
     glClearColor(1, 1, 1, 1);
     glEnable(GL_DEPTH_TEST);
@@ -223,6 +216,8 @@ int main(int argc, char ** argv)
     glutKeyboardFunc(mygllib::Keyboard::keyboard);
     glutSpecialFunc(specialkeyboard);
     glutReshapeFunc(mygllib::Reshape::reshape);
+    glutPassiveMotionFunc(mygllib::Mouse::motion);
+    glutMouseFunc(mygllib::Mouse::button);
     glutMainLoop();
     
     return 0;
