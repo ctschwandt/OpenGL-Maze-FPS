@@ -1,8 +1,5 @@
 // File: main.cpp
 // Name: Cole Schwandt
-//
-// Description:
-// Procedural terrain generation using diamond square algorithm
 
 #include <iostream>
 #include <GL/freeglut.h>
@@ -218,6 +215,7 @@ int main(int argc, char ** argv)
     glutReshapeFunc(mygllib::Reshape::reshape);
     glutPassiveMotionFunc(mygllib::Mouse::motion);
     glutMouseFunc(mygllib::Mouse::button);
+    glutSetCursor(GLUT_CURSOR_NONE);
     glutMainLoop();
     
     return 0;

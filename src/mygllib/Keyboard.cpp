@@ -42,20 +42,20 @@ void mygllib::Keyboard::keyboard(unsigned char key, int, int)
             moved = true;
             break;
         case 'a': case 'A':
-            view.eyex() += rx * MOVE_SPEED;
-            view.eyez() += rz * MOVE_SPEED;
+            view.eyex() -= rx * MOVE_SPEED;
+            view.eyez() -= rz * MOVE_SPEED;
             moved = true;
             break;
         case 'd': case 'D':
-            view.eyex() -= rx * MOVE_SPEED;
-            view.eyez() -= rz * MOVE_SPEED;
+            view.eyex() += rx * MOVE_SPEED;
+            view.eyez() += rz * MOVE_SPEED;
             moved = true;
             break;
         case ' ': // jump
             view.eyey() += VERTICAL_SPEED;
             moved = true;
             break;
-        case 0x11: // left control key
+        case 'c': case'C': // crouch
             view.eyey() -= VERTICAL_SPEED;
             moved = true;
             break;

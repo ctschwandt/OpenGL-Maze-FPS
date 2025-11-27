@@ -8,9 +8,9 @@
 
 namespace
 {
-    bool firstMouse = true;
-    int lastX = 0;
-    int lastY = 0;
+    bool firstMouse    = true;
+    int  lastX         = 0;
+    int  lastY         = 0;
     const float MOUSE_SENS = 0.005f;
 }
 
@@ -30,7 +30,12 @@ void mygllib::Mouse::motion(int x, int y)
     lastX = x;
     lastY = y;
 
+    // If there's no movement, nothing to do
+    if (dx == 0 && dy == 0)
+        return;
+
     mygllib::View & view = *(mygllib::SingletonView::getInstance());
+
     view.yaw()   += dx * MOUSE_SENS;
     view.pitch() -= dy * MOUSE_SENS;
 
