@@ -24,14 +24,8 @@ namespace mygllib
     private:
         GLFWwindow *window_;
 
-        // Last cursor position
-        double last_x_;
-        double last_y_;
-
         // Per-frame deltas
         double mouse_delta_x_;
         double mouse_delta_y_;
-
-        bool   first_mouse_;
     };
 }
