@@ -13,15 +13,18 @@ namespace mygllib
         // visible cursor
         glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
-        // Initialize last_x_/last_y_ to current position
-        double xpos, ypos;
-        glfwGetCursorPos(window_, &xpos, &ypos);
-        last_x_ = xpos;
-        last_y_ = ypos;
+    #ifdef GLFW_RAW_MOUSE_MOTION
+        if (glfwRawMouseMotionSupported())
+            glfwSetInputMode(window_, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE);
+    #endif
     }
 
     void GLFWInput::begin_frame()
     {
+        // reset deltas
+        mouse_delta_x_ = 0.0;
+        mouse_delta_y_ = 0.0;
+
         double xpos, ypos;
         glfwGetCursorPos(window_, &xpos, &ypos);
 
@@ -29,20 +32,16 @@ namespace mygllib
         {
             last_x_ = xpos;
             last_y_ = ypos;
-            mouse_delta_x_ = 0.0;
-            mouse_delta_y_ = 0.0;
             first_mouse_ = false;
             return;
         }
 
-        double xoffset = xpos - last_x_;
-        double yoffset = last_y_ - ypos; // invert Y so up is positive
+        // Deltas since last frame. This is the "virtual cursor offset"
+        mouse_delta_x_ = xpos - last_x_;
+        mouse_delta_y_ = last_y_ - ypos;   // invert Y so moving mouse up is +dy
 
         last_x_ = xpos;
         last_y_ = ypos;
-
-        mouse_delta_x_ = xoffset;
-        mouse_delta_y_ = yoffset;
     }
 
     bool GLFWInput::key_down(int key) const
