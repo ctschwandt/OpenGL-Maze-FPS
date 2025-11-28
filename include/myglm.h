@@ -279,33 +279,33 @@ const glm::vec4 & operator/=(glm::vec4 & v, int c)
 //=============================================================================
 // Approximate comparison
 //=============================================================================
-bool approxEqual(const glm::vec2 & x, const glm::vec2 & y)
+inline bool approxEqual(const glm::vec2 & x, const glm::vec2 & y)
 {
     return glm::all(glm::epsilonEqual(x - y, glm::vec2(), glm::epsilon< float >()));
 }
 
-bool approxEqual(const glm::vec3 & x, const glm::vec3 & y)
+inline bool approxEqual(const glm::vec3 & x, const glm::vec3 & y)
 {
     return glm::all(glm::epsilonEqual(x - y, glm::vec3(), glm::epsilon< float >()));
 }
-bool approxEqual(const glm::vec4 & x, const glm::vec4 & y)
+inline bool approxEqual(const glm::vec4 & x, const glm::vec4 & y)
 {
     return glm::all(glm::epsilonEqual(x - y, glm::vec4(), glm::epsilon< float >()));
 }
-bool approxEqual(const glm::mat2 & x, const glm::mat2 & y)
+inline bool approxEqual(const glm::mat2 & x, const glm::mat2 & y)
 {
     return
         glm::all(glm::epsilonEqual(x[0] - y[0], glm::vec2(), glm::epsilon< float >()))
         && glm::all(glm::epsilonEqual(x[1] - y[1], glm::vec2(), glm::epsilon< float >()));
 }
-bool approxEqual(const glm::mat3 & x, const glm::mat3 & y)
+inline bool approxEqual(const glm::mat3 & x, const glm::mat3 & y)
 {
     return
         glm::all(glm::epsilonEqual(x[0] - y[0], glm::vec3(), glm::epsilon< float >()))
         && glm::all(glm::epsilonEqual(x[1] - y[1], glm::vec3(), glm::epsilon< float >()))
         && glm::all(glm::epsilonEqual(x[2] - y[2], glm::vec3(), glm::epsilon< float >()));
 }
-bool approxEqual(const glm::mat4 & x, const glm::mat4 & y)
+inline bool approxEqual(const glm::mat4 & x, const glm::mat4 & y)
 {
     return
         glm::all(glm::epsilonEqual(x[0] - y[0], glm::vec4(), glm::epsilon< float >()))

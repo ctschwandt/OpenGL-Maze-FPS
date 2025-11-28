@@ -21,6 +21,7 @@ namespace mygllib
         double mouse_delta_y() const { return mouse_delta_y_; }
 
         bool key_down(int key) const;
+        bool mouse_button_down(int button) const;
 
         GLFWwindow * window() const { return window_; }
 
