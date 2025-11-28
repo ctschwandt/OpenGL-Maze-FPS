@@ -1,6 +1,14 @@
 CXX := g++
-CXXFLAGS := -g -Wall -Iinclude
-LDFLAGS := -lGL -lGLU -lGLEW -lglfw
+SDL_CFLAGS := $(shell sdl2-config --cflags 2>/dev/null)
+SDL_LIBS   := $(shell sdl2-config --libs 2>/dev/null)
+
+ifeq ($(SDL_CFLAGS),)
+SDL_CFLAGS := $(shell pkg-config --cflags sdl2 2>/dev/null)
+SDL_LIBS   := $(shell pkg-config --libs sdl2 2>/dev/null)
+endif
+
+CXXFLAGS := -g -Wall -Iinclude $(SDL_CFLAGS)
+LDFLAGS := -lGL -lGLU -lGLEW $(SDL_LIBS)
 
 SRC_DIR := src
 BUILD_DIR := build

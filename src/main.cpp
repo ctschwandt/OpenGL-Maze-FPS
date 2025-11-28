@@ -3,16 +3,18 @@
 
 #include <exception>
 #include <iostream>
-#include <GL/glew.h>
-#include <GLFW/glfw3.h>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 #include <vector>
+
+#include <SDL2/SDL.h>
+#include <GL/glew.h>
 
 #include "Globals.h"
 #include "Maze.h"
 #include "mygllib/gl3d.h"
-#include "mygllib/GLFWInput.h"
+#include "mygllib/SDLInput.h"
 #include "mygllib/View.h"
 #include "mygllib/SingletonView.h"
 #include "mygllib/Reshape.h"
@@ -143,15 +145,15 @@ void draw_maze_columns()
 //==============================================================
 // User Input
 //==============================================================
-void handle_function_keys(const mygllib::GLFWInput &input)
+void handle_function_keys(const mygllib::SDLInput &input)
 {
     static bool f1_down_previous = false;
     static bool f2_down_previous = false;
     static bool f3_down_previous = false;
 
-    bool f1_down = input.key_down(GLFW_KEY_F1);
-    bool f2_down = input.key_down(GLFW_KEY_F2);
-    bool f3_down = input.key_down(GLFW_KEY_F3);
+    bool f1_down = input.key_down(SDL_SCANCODE_F1);
+    bool f2_down = input.key_down(SDL_SCANCODE_F2);
+    bool f3_down = input.key_down(SDL_SCANCODE_F3);
 
     if (f1_down && !f1_down_previous)
     {
@@ -231,11 +233,12 @@ int main(int argc, char ** argv)
     // ----- Create window & GL context -----
     mygllib::WIN_W = 700;
     mygllib::WIN_H = 700;
-    GLFWwindow * window = nullptr;
+    SDL_Window * window = nullptr;
+    SDL_GLContext gl_context = nullptr;
 
     try
     {
-        window = mygllib::init3d();
+        window = mygllib::init3d(gl_context);
     }
     catch (const std::exception & ex)
     {
@@ -247,38 +250,55 @@ int main(int argc, char ** argv)
     mygllib::Reshape::reshape(mygllib::WIN_W, mygllib::WIN_H);
 
     // Resize callback
-    glfwSetFramebufferSizeCallback(window,
-        [](GLFWwindow *, int w, int h)
-        {
-            mygllib::Reshape::reshape(w, h);
-        });
-
     init();
 
     // ----- Input wrapper -----
-    mygllib::GLFWInput input(window);
+    mygllib::SDLInput input;
 
     // Timing for dt
-    double lastTime = glfwGetTime();
+    Uint64 perf_freq = SDL_GetPerformanceFrequency();
+    Uint64 last_counter = SDL_GetPerformanceCounter();
 
     // ----- Main loop -----
-    while (!glfwWindowShouldClose(window))
+    bool running = true;
+    while (running)
     {
-        double currentTime = glfwGetTime();
-        float dt = static_cast<float>(currentTime - lastTime);
-        lastTime = currentTime;
+        Uint64 current_counter = SDL_GetPerformanceCounter();
+        float dt = static_cast<float>(current_counter - last_counter) / static_cast<float>(perf_freq);
+        last_counter = current_counter;
 
-        glfwPollEvents();         // 1) let GLFW update its internal cursor state
-        input.begin_frame();      // 2) sample cursor and compute dx/dy for this frame
+        input.begin_frame();
+
+        SDL_Event event;
+        while (SDL_PollEvent(&event))
+        {
+            if (event.type == SDL_QUIT)
+            {
+                running = false;
+            }
+            else if (event.type == SDL_WINDOWEVENT &&
+                     event.window.event == SDL_WINDOWEVENT_SIZE_CHANGED)
+            {
+                mygllib::Reshape::reshape(event.window.data1, event.window.data2);
+            }
+        }
+
+        input.capture_mouse_delta();
 
         handle_function_keys(input);
         mygllib::Mouse::update_from_input(input);
         mygllib::Keyboard::update_from_input(input, dt);
 
         display();
-        glfwSwapBuffers(window);
+
+        if (input.quit_requested())
+            running = false;
+
+        SDL_GL_SwapWindow(window);
     }
 
-    glfwTerminate();
+    SDL_GL_DeleteContext(gl_context);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
     return 0;
 }

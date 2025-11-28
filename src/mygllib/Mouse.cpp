@@ -2,7 +2,7 @@
 #include <cmath>
 #include <iostream>
 
-#include "mygllib/GLFWInput.h"
+#include "mygllib/SDLInput.h"
 #include "mygllib/Mouse.h"
 #include "mygllib/SingletonView.h"
 #include "mygllib/View.h"
@@ -12,7 +12,7 @@ namespace
     const float  MOUSE_SENS = 0.005f;
 }
 
-void mygllib::Mouse::update_from_input(const GLFWInput & input)
+void mygllib::Mouse::update_from_input(const SDLInput & input)
 {
     double dx = input.mouse_delta_x();
     double dy = input.mouse_delta_y();

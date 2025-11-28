@@ -5,8 +5,8 @@
 
 #include <stdexcept>
 
+#include <SDL2/SDL.h>
 #include <GL/glew.h>
-#include <GLFW/glfw3.h>
 
 #include "config.h"
 #include "View.h"
@@ -17,28 +17,46 @@ namespace mygllib
     using namespace mygllib;
 
     inline
-    GLFWwindow * init3d()
+    SDL_Window * init3d(SDL_GLContext &gl_context)
     {
-        if (!glfwInit())
+        if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS) != 0)
         {
-            throw std::runtime_error("Failed to initialize GLFW");
+            throw std::runtime_error("Failed to initialize SDL");
         }
 
-        GLFWwindow *window = glfwCreateWindow(WIN_W, WIN_H, WIN_TITLE, nullptr, nullptr);
+        SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
+        SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+        SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
+
+        SDL_Window *window = SDL_CreateWindow(
+            WIN_TITLE,
+            SDL_WINDOWPOS_CENTERED,
+            SDL_WINDOWPOS_CENTERED,
+            WIN_W,
+            WIN_H,
+            SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE);
         if (!window)
         {
-            glfwTerminate();
-            throw std::runtime_error("Failed to create GLFW window");
+            SDL_Quit();
+            throw std::runtime_error("Failed to create SDL window");
         }
 
-        glfwMakeContextCurrent(window);
-        glfwSwapInterval(1);
+        gl_context = SDL_GL_CreateContext(window);
+        if (!gl_context)
+        {
+            SDL_DestroyWindow(window);
+            SDL_Quit();
+            throw std::runtime_error("Failed to create OpenGL context");
+        }
+
+        SDL_GL_SetSwapInterval(1);
 
         glewExperimental = GL_TRUE;
         if (glewInit() != GLEW_OK)
         {
-            glfwDestroyWindow(window);
-            glfwTerminate();
+            SDL_GL_DeleteContext(gl_context);
+            SDL_DestroyWindow(window);
+            SDL_Quit();
             throw std::runtime_error("Failed to initialize GLEW");
         }
 

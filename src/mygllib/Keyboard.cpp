@@ -4,7 +4,9 @@
 #include <cmath>
 #include <cstdlib>
 
-#include "mygllib/GLFWInput.h"
+#include <SDL2/SDL.h>
+
+#include "mygllib/SDLInput.h"
 #include "mygllib/Keyboard.h"
 #include "mygllib/SingletonView.h"
 #include "mygllib/View.h"
@@ -15,7 +17,7 @@ namespace
     const float VERTICAL_SPEED = 3.0f; // units per second
 }
 
-void mygllib::Keyboard::update_from_input(const GLFWInput &input, float dt)
+void mygllib::Keyboard::update_from_input(SDLInput &input, float dt)
 {
     mygllib::View & view = *(mygllib::SingletonView::getInstance());
 
@@ -27,44 +29,42 @@ void mygllib::Keyboard::update_from_input(const GLFWInput &input, float dt)
 
     bool moved = false;
 
-    if (input.key_down(GLFW_KEY_ESCAPE))
-    {
-        glfwSetWindowShouldClose(input.window(), GLFW_TRUE);
-    }
+    if (input.key_down(SDL_SCANCODE_ESCAPE))
+        input.request_quit();
 
     float moveStep     = MOVE_SPEED     * dt;
     float verticalStep = VERTICAL_SPEED * dt;
 
-    if (input.key_down(GLFW_KEY_W))
+    if (input.key_down(SDL_SCANCODE_W))
     {
         view.eyex() += fx * moveStep;
         view.eyez() += fz * moveStep;
         moved = true;
     }
-    if (input.key_down(GLFW_KEY_S))
+    if (input.key_down(SDL_SCANCODE_S))
     {
         view.eyex() -= fx * moveStep;
         view.eyez() -= fz * moveStep;
         moved = true;
     }
-    if (input.key_down(GLFW_KEY_A))
+    if (input.key_down(SDL_SCANCODE_A))
     {
         view.eyex() -= rx * moveStep;
         view.eyez() -= rz * moveStep;
         moved = true;
     }
-    if (input.key_down(GLFW_KEY_D))
+    if (input.key_down(SDL_SCANCODE_D))
     {
         view.eyex() += rx * moveStep;
         view.eyez() += rz * moveStep;
         moved = true;
     }
-    if (input.key_down(GLFW_KEY_SPACE))
+    if (input.key_down(SDL_SCANCODE_SPACE))
     {
         view.eyey() += verticalStep;
         moved = true;
     }
-    if (input.key_down(GLFW_KEY_C))
+    if (input.key_down(SDL_SCANCODE_C))
     {
         view.eyey() -= verticalStep;
         moved = true;
