@@ -13,7 +13,7 @@ public:
     void update(const Maze &maze, const PlayerInput &input, float dt);
 
     float vy;
-    bool  onGround;
+    bool onGround;
     float fireCooldown;
 };
 

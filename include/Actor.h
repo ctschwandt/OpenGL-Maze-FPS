@@ -6,7 +6,7 @@ class Actor
 {
 public:
     Actor();
-    virtual ~Actor();
+    virtual ~Actor() = default;
 
     virtual void update(float dt);
 
@@ -14,6 +14,6 @@ public:
     float yaw;
     float radius;
     float height;
-    int   health;
+    int health;
 };
 

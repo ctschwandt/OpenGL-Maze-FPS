@@ -1,19 +1,10 @@
 #include "Player.h"
 
-#include <algorithm>
 #include <cmath>
 
+#include "InputController.h"
 #include "Maze.h"
 #include "Physics.h"
-#include "InputController.h"
-
-namespace
-{
-    const float MOVE_SPEED = 2.5f;
-    const float JUMP_SPEED = 4.5f;
-    const float GRAVITY    = -9.8f;
-    const float FLOOR_Y    = 0.0f;
-}
 
 Player::Player()
     : Actor(),
@@ -21,37 +12,36 @@ Player::Player()
       onGround(true),
       fireCooldown(0.0f)
 {
-    pos = glm::vec3(1.5f, FLOOR_Y, 1.5f);
-    height = 1.8f;
-    radius = 0.3f;
 }
 
 void Player::update(const Maze &maze, const PlayerInput &input, float dt)
 {
-    yaw += input.mouseDeltaX * 0.0025f;
+    yaw += input.mouseDeltaX;
 
-    float dx = input.moveRight * MOVE_SPEED * dt;
-    float dz = input.moveForward * MOVE_SPEED * dt;
+    float moveSpeed = 2.5f;
+    float forward = input.moveForward * moveSpeed * dt;
+    float right = input.moveRight * moveSpeed * dt;
 
-    float sinYaw = std::sin(yaw);
-    float cosYaw = std::cos(yaw);
+    float dx = std::cos(yaw) * forward + std::sin(yaw) * right;
+    float dz = -std::sin(yaw) * forward + std::cos(yaw) * right;
+    Physics::move_horizontal(*this, maze, dx, dz);
 
-    float worldDx = cosYaw * dx - sinYaw * dz;
-    float worldDz = sinYaw * dx + cosYaw * dz;
-
-    Physics::move_horizontal(*this, maze, worldDx, worldDz);
-
+    const float gravity = -9.8f;
+    const float floorY = 0.0f;
     if (input.jumpPressed && onGround)
     {
-        vy = JUMP_SPEED;
+        vy = 5.0f;
         onGround = false;
     }
-
-    Physics::apply_gravity_and_floor(*this, dt, GRAVITY, FLOOR_Y);
+    Physics::apply_gravity_and_floor(*this, dt, gravity, floorY);
 
     if (fireCooldown > 0.0f)
     {
-        fireCooldown = std::max(0.0f, fireCooldown - dt);
+        fireCooldown -= dt;
+    }
+    if (input.shootPressed && fireCooldown <= 0.0f)
+    {
+        fireCooldown = 0.5f;
     }
 }
 

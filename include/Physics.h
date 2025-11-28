@@ -1,10 +1,12 @@
 #pragma once
 
+#include "myglm.h"
+
 class Actor;
+class Player;
 class Enemy;
 class Maze;
 struct Projectile;
-class Player;
 
 namespace Physics
 {

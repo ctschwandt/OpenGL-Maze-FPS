@@ -1,6 +1,6 @@
 #include "Game.h"
 
-#include <GL/glew.h>
+#include <cstdlib>
 
 #include "Globals.h"
 #include "Physics.h"
@@ -9,29 +9,25 @@ Game::Game()
     : maze(5)
 {
     maze.init(0, 0);
-    spawn_test_enemy();
-}
+    player.pos = glm::vec3(1.0f, 0.0f, 1.0f);
+    player.height = 1.8f;
 
-void Game::spawn_test_enemy()
-{
-    enemies.emplace_back();
+    Enemy e;
+    e.pos = glm::vec3(3.0f, 0.0f, 3.0f);
+    enemies.push_back(e);
 }
 
 void Game::update(const mygllib::GLFWInput &input, float dt)
 {
-    PlayerInput pInput = inputController.sample(input, dt);
-    player.update(maze, pInput, dt);
+    PlayerInput pi = inputController.sample(input, dt);
+    player.update(maze, pi, dt);
 
-    for (Enemy &enemy : enemies)
+    for (Enemy & enemy : enemies)
     {
         enemy.update(maze, player.pos, dt);
     }
 
-    for (Projectile &proj : projectiles)
-    {
-        if (!proj.alive) continue;
-        proj.pos += proj.vel * dt;
-    }
+    (void)projectiles;
 }
 
 void Game::render()
