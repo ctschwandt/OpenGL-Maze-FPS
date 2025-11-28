@@ -21,7 +21,7 @@
 #include "mygllib/Material.h"
 #include "mygllib/Light.h"
 #include "myglm.h"
-#include "PlayerMovement.h"
+#include "Player.h"
 
 //==============================================================
 // Globals
