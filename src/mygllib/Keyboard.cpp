@@ -7,14 +7,12 @@
 
 #include "mygllib/GLFWInput.h"
 #include "mygllib/Keyboard.h"
+#include "mygllib/PlayerMovement.h"
 #include "mygllib/SingletonView.h"
 #include "mygllib/View.h"
 
 namespace
 {
-    const float MOVE_SPEED      = 3.0f; // units per second
-    const float VERTICAL_SPEED  = 3.0f; // units per second
-
     // radians per second for keyboard look
     const float TURN_SPEED      = 1.5f; // yaw speed (left/right)
     const float LOOK_SPEED      = 1.5f; // pitch speed (up/down)
@@ -24,61 +22,11 @@ void mygllib::Keyboard::update_from_input(const GLFWInput & input, float dt)
 {
     mygllib::View & view = *(mygllib::SingletonView::getInstance());
 
-    float yaw = view.yaw();
-    float fx = std::cos(yaw);
-    float fz = std::sin(yaw);
-    float rx = -fz;
-    float rz =  fx;
-
-    bool moved   = false;
     bool rotated = false;
 
     if (input.key_down(GLFW_KEY_ESCAPE))
     {
         glfwSetWindowShouldClose(input.window(), GLFW_TRUE);
-    }
-
-    float moveStep     = MOVE_SPEED     * dt;
-    float verticalStep = VERTICAL_SPEED * dt;
-
-    // --- Translation (WASD + up/down) ---
-
-    if (input.key_down(GLFW_KEY_W))
-    {
-        view.eyex() += fx * moveStep;
-        view.eyez() += fz * moveStep;
-        moved = true;
-    }
-    if (input.key_down(GLFW_KEY_S))
-    {
-        view.eyex() -= fx * moveStep;
-        view.eyez() -= fz * moveStep;
-        moved = true;
-    }
-    if (input.key_down(GLFW_KEY_A))
-    {
-        view.eyex() -= rx * moveStep;
-        view.eyez() -= rz * moveStep;
-        moved = true;
-    }
-    if (input.key_down(GLFW_KEY_D))
-    {
-        view.eyex() += rx * moveStep;
-        view.eyez() += rz * moveStep;
-        moved = true;
-    }
-    if (input.key_down(GLFW_KEY_SPACE))
-    {
-        view.eyey() += verticalStep;
-        moved = true;
-    }
-    if (input.key_down(GLFW_KEY_C))
-    {
-        if (view.eyey() > 1.85)
-        {
-        view.eyey() -= verticalStep;
-        moved = true;
-        }
     }
 
     // --- Rotation (arrow keys) ---
@@ -113,7 +61,9 @@ void mygllib::Keyboard::update_from_input(const GLFWInput & input, float dt)
         view.pitch() = std::clamp(view.pitch(), -1.2f, 1.2f);
     }
 
-    // Only recompute center if actually moved or rotated
-    if (moved || rotated)
-        view.update_center_from_yaw_pitch();
+    // Process movement & physics (ground/air accel, dash, slide, gravity)
+    update_player_movement(input, dt, view);
+
+    // Always recompute center when movement/rotation occurred
+    view.update_center_from_yaw_pitch();
 }
