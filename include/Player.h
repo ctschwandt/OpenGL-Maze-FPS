@@ -1,3 +1,6 @@
+#ifndef PLAYER_H
+#define PLAYER_H
+
 #pragma once
 
 #include "Actor.h"
@@ -17,3 +20,4 @@ public:
     float fireCooldown;
 };
 
+#endif // PLAYER_H

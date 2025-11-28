@@ -1,3 +1,6 @@
+#ifndef INPUTCONTROLLER_H
+#define INPUTCONTROLLER_H
+
 #pragma once
 
 #include "myglm.h"
@@ -19,3 +22,4 @@ public:
     PlayerInput sample(const mygllib::GLFWInput &input, float dt) const;
 };
 
+#endif // INPUTCONTROLLER_H

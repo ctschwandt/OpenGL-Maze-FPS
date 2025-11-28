@@ -104,4 +104,4 @@ namespace mygllib
     }
 }
 
-#endif
+#endif // GL3D_H

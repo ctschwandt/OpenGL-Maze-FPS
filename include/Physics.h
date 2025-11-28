@@ -1,3 +1,6 @@
+#ifndef PHYSICS_H
+#define PHYSICS_H
+
 #pragma once
 
 #include "myglm.h"
@@ -16,3 +19,4 @@ namespace Physics
     bool projectile_hits_enemy(const Projectile &p, const Enemy &e);
 }
 
+#endif // PHYSICS_H

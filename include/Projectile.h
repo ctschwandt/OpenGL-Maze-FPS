@@ -1,3 +1,6 @@
+#ifndef PROJECTILE_H
+#define PROJECTILE_H
+
 #pragma once
 
 #include "myglm.h"
@@ -10,3 +13,4 @@ struct Projectile
     bool alive;
 };
 
+#endif // PROJECTILE_H

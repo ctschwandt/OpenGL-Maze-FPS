@@ -314,4 +314,4 @@ bool approxEqual(const glm::mat4 & x, const glm::mat4 & y)
         && glm::all(glm::epsilonEqual(x[3] - y[3], glm::vec4(), glm::epsilon< float >()));
 }
 
-#endif
+#endif // MYGLM_H

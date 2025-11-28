@@ -1,3 +1,6 @@
+#ifndef GAME_H
+#define GAME_H
+
 #pragma once
 
 #include <vector>
@@ -27,3 +30,4 @@ private:
     Renderer renderer;
 };
 
+#endif // GAME_H
