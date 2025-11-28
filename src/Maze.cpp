@@ -304,7 +304,7 @@ bool Maze::is_wall_tile(int tr, int tc) const
         if (above.neighbors[S] == &below || below.neighbors[N] == &above)
             return false;
 
-        return true; // no passage -> wall
+        return true;
     }
 
     // Vertical edge (between two horizontal neighbor cells)
