@@ -10,7 +10,7 @@ namespace mygllib
           mouse_delta_y_(0.0),
           first_mouse_(true)
     {
-        // Visible, normal cursor
+        // visible cursor
         glfwSetInputMode(window_, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
 
         // Initialize last_x_/last_y_ to current position

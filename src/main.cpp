@@ -272,7 +272,7 @@ int main(int argc, char ** argv)
         input.begin_frame();      // 2) sample cursor and compute dx/dy for this frame
 
         handle_function_keys(input);
-        mygllib::Mouse::update_from_input(input, dt);
+        mygllib::Mouse::update_from_input(input);
         mygllib::Keyboard::update_from_input(input, dt);
 
         display();
