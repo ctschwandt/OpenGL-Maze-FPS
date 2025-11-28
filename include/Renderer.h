@@ -1,3 +1,6 @@
+#ifndef RENDERER_H
+#define RENDERER_H
+
 #pragma once
 
 #include <vector>
@@ -16,3 +19,4 @@ public:
                 const std::vector<Projectile> &projectiles);
 };
 
+#endif // RENDERER_H

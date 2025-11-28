@@ -1,3 +1,6 @@
+#ifndef ACTOR_H
+#define ACTOR_H
+
 #pragma once
 
 #include "myglm.h"
@@ -17,3 +20,4 @@ public:
     int health;
 };
 
+#endif // ACTOR_H

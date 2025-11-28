@@ -27,4 +27,4 @@ namespace mygllib
     }
 }
 
-#endif
+#endif // DEBUG_H

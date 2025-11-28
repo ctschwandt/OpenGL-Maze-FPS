@@ -165,4 +165,4 @@ namespace mygllib
 
 extern mygllib::View view;
 
-#endif
+#endif // VIEW_H

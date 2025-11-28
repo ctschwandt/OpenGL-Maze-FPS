@@ -1,3 +1,6 @@
+#ifndef PLAYERMOVEMENT_H
+#define PLAYERMOVEMENT_H
+
 #pragma once
 
 #include <glm/glm.hpp>
@@ -47,3 +50,4 @@ namespace mygllib
     void update_player_movement(const GLFWInput & input, float dt, View & view);
 }
 
+#endif // PLAYERMOVEMENT_H

@@ -1,3 +1,6 @@
+#ifndef GLFWINPUT_H
+#define GLFWINPUT_H
+
 #pragma once
 
 #include <GL/glew.h>
@@ -35,3 +38,5 @@ namespace mygllib
         bool   first_mouse_;
     };
 }
+
+#endif // GLFWINPUT_H

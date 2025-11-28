@@ -11,4 +11,4 @@ namespace globals
     extern bool draw_wire;
 }
 
-#endif
+#endif // GLOBALS_H

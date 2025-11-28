@@ -210,4 +210,4 @@ std::ostream & operator<<(std::ostream & cout, const HeightMap & hm)
     return cout;
 }
 
-#endif // HeightMap.h
+#endif // HEIGHTMAP_H

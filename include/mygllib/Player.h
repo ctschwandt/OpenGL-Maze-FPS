@@ -1,3 +1,6 @@
+#ifndef PLAYER_H
+#define PLAYER_H
+
 #pragma once
 
 #include <glm/glm.hpp>
@@ -13,3 +16,4 @@ namespace mygllib
     };
 }
 
+#endif // PLAYER_H

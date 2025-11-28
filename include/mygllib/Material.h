@@ -126,4 +126,4 @@ namespace mygllib
     };
 };
 
-#endif
+#endif // MATERIAL_H

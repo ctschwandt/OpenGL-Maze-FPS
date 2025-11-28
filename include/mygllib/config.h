@@ -55,7 +55,7 @@ namespace mygllib
     // (NOTE: Z_NEAR and Z_FAR is under orthogonal viewing
     
     
-    // TODO: Add function to process command line arguments
+// TODO: Add function to process command line arguments
 }
 
-#endif
+#endif // CONFIG_H

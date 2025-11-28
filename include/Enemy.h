@@ -1,3 +1,6 @@
+#ifndef ENEMY_H
+#define ENEMY_H
+
 #pragma once
 
 #include "Actor.h"
@@ -20,3 +23,4 @@ public:
     EnemyState state;
 };
 
+#endif // ENEMY_H
