@@ -14,6 +14,8 @@ namespace
 
 void mygllib::Mouse::update_from_input(const GLFWInput & input)
 {
+    return; // no mouse for now
+    
     double dx = input.mouse_delta_x();
     double dy = input.mouse_delta_y();
 

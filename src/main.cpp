@@ -255,7 +255,7 @@ int main(int argc, char ** argv)
 
     init();
 
-    // ----- Input wrapper -----
+    // ----- Input wrapper (sets cursor disabled + callback inside ctor) -----
     mygllib::GLFWInput input(window);
 
     // Timing for dt
@@ -264,17 +264,24 @@ int main(int argc, char ** argv)
     // ----- Main loop -----
     while (!glfwWindowShouldClose(window))
     {
+        // 1) Reset deltas for this frame
+        input.begin_frame();
+
+        // 2) Pump events; this will trigger the cursor-pos callback,
+        //    which accumulates mouse_delta_x_/y_ inside `input`.
+        glfwPollEvents();
+
+        // 3) Timing
         double currentTime = glfwGetTime();
         float dt = static_cast<float>(currentTime - lastTime);
         lastTime = currentTime;
 
-        glfwPollEvents();         // 1) let GLFW update its internal cursor state
-        input.begin_frame();      // 2) sample cursor and compute dx/dy for this frame
-
+        // 4) Handle input
         handle_function_keys(input);
         mygllib::Mouse::update_from_input(input);
         mygllib::Keyboard::update_from_input(input, dt);
 
+        // 5) Render
         display();
         glfwSwapBuffers(window);
     }

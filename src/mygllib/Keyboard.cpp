@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <cstdlib>
+#include <algorithm>
 
 #include "mygllib/GLFWInput.h"
 #include "mygllib/Keyboard.h"
@@ -11,11 +12,15 @@
 
 namespace
 {
-    const float MOVE_SPEED     = 3.0f; // units per second
-    const float VERTICAL_SPEED = 3.0f; // units per second
+    const float MOVE_SPEED      = 3.0f; // units per second
+    const float VERTICAL_SPEED  = 3.0f; // units per second
+
+    // radians per second for keyboard look
+    const float TURN_SPEED      = 1.5f; // yaw speed (left/right)
+    const float LOOK_SPEED      = 1.5f; // pitch speed (up/down)
 }
 
-void mygllib::Keyboard::update_from_input(const GLFWInput &input, float dt)
+void mygllib::Keyboard::update_from_input(const GLFWInput & input, float dt)
 {
     mygllib::View & view = *(mygllib::SingletonView::getInstance());
 
@@ -25,7 +30,8 @@ void mygllib::Keyboard::update_from_input(const GLFWInput &input, float dt)
     float rx = -fz;
     float rz =  fx;
 
-    bool moved = false;
+    bool moved   = false;
+    bool rotated = false;
 
     if (input.key_down(GLFW_KEY_ESCAPE))
     {
@@ -34,6 +40,8 @@ void mygllib::Keyboard::update_from_input(const GLFWInput &input, float dt)
 
     float moveStep     = MOVE_SPEED     * dt;
     float verticalStep = VERTICAL_SPEED * dt;
+
+    // --- Translation (WASD + up/down) ---
 
     if (input.key_down(GLFW_KEY_W))
     {
@@ -66,10 +74,46 @@ void mygllib::Keyboard::update_from_input(const GLFWInput &input, float dt)
     }
     if (input.key_down(GLFW_KEY_C))
     {
+        if (view.eyey() > 1.85)
+        {
         view.eyey() -= verticalStep;
         moved = true;
+        }
     }
 
-    if (moved)
+    // --- Rotation (arrow keys) ---
+
+    // LEFT / RIGHT -> yaw
+    if (input.key_down(GLFW_KEY_RIGHT))
+    {
+        view.yaw() += TURN_SPEED * dt;   // same sign as mouse moving right
+        rotated = true;
+    }
+    if (input.key_down(GLFW_KEY_LEFT))
+    {
+        view.yaw() -= TURN_SPEED * dt;
+        rotated = true;
+    }
+
+    // UP / DOWN -> pitch
+    if (input.key_down(GLFW_KEY_UP))
+    {
+        view.pitch() += LOOK_SPEED * dt; // look up
+        rotated = true;
+    }
+    if (input.key_down(GLFW_KEY_DOWN))
+    {
+        view.pitch() -= LOOK_SPEED * dt; // look down
+        rotated = true;
+    }
+
+    // Clamp pitch to same range as mouse
+    if (rotated)
+    {
+        view.pitch() = std::clamp(view.pitch(), -1.2f, 1.2f);
+    }
+
+    // Only recompute center if actually moved or rotated
+    if (moved || rotated)
         view.update_center_from_yaw_pitch();
 }
