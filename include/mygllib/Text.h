@@ -36,4 +36,4 @@ namespace mygllib
         float scale_;
     };
 }
-#endif
+#endif // TEXT_H

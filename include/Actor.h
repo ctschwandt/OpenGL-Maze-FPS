@@ -1,13 +1,10 @@
-#pragma once
+#ifndef ACTOR_H
+#define ACTOR_H
 
 #include <glm/glm.hpp>
 
-class Maze;
-
 namespace game
 {
-    struct PlayerInput;
-
     class Actor
     {
     public:
@@ -20,14 +17,6 @@ namespace game
 
         virtual ~Actor() = default;
     };
-
-    class Player : public Actor
-    {
-    public:
-        bool onGround{false};
-        float fireCooldown{0.0f};
-
-        void update(const Maze & maze, const PlayerInput & input, float dt);
-    };
 }
 
+#endif // ACTOR_H

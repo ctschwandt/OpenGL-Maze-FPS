@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PLAYERMOVEMENT_H
+#define PLAYERMOVEMENT_H
 
 #include <glm/glm.hpp>
 
@@ -49,4 +50,6 @@ namespace game
     // Main movement update that applies input-driven acceleration, friction, dash, and slide.
     void update_player_movement(const mygllib::GLFWInput & input, float dt, mygllib::View & view);
 }
+
+#endif // PLAYERMOVEMENT_H
 

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PLAYERINPUT_H
+#define PLAYERINPUT_H
 
 namespace game
 {
@@ -7,4 +8,6 @@ namespace game
     {
     };
 }
+
+#endif // PLAYERINPUT_H
 

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef PLAYER_H
+#define PLAYER_H
 
 #include <glm/glm.hpp>
 
@@ -12,4 +13,6 @@ namespace mygllib
         bool sliding{false};
     };
 }
+
+#endif // PLAYER_H
 

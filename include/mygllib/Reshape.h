@@ -13,4 +13,4 @@ namespace mygllib
     };
 }
 
-#endif
+#endif // RESHAPE_H

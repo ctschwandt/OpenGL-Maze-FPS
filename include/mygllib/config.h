@@ -58,4 +58,4 @@ namespace mygllib
     // TODO: Add function to process command line arguments
 }
 
-#endif
+#endif // CONFIG_H
