@@ -117,7 +117,7 @@ void draw_box(float cx, float cy, float cz,
 
 void draw_maze_columns()
 {
-    float H     = 1.5f;      // wall height in logical units
+    float H     = 0.5f;      // wall height in logical units
     float hy    = H / 2.0f;
     int   tileN = maze.tiles_n;   // = 2*n + 1
 
@@ -185,7 +185,7 @@ void display()
     //mygllib::Light::all_off();
     glLineWidth(1.0f);
 
-    const float S = 3.0f;
+    const float S = 20.0f;
     float maze_span = S * maze.tiles_n;
 
     if (globals::draw_plane)
