@@ -7,7 +7,7 @@
 
 #include "mygllib/GLFWInput.h"
 #include "mygllib/Keyboard.h"
-#include "mygllib/PlayerMovement.h"
+#include "mygllib/Player.h"
 #include "mygllib/SingletonView.h"
 #include "mygllib/View.h"
 
@@ -62,7 +62,7 @@ void mygllib::Keyboard::update_from_input(const GLFWInput & input, float dt)
     }
 
     // Process movement & physics (ground/air accel, dash, slide, gravity)
-    update_player_movement(input, dt, view);
+    update_player(input, dt);
 
     // Always recompute center when movement/rotation occurred
     view.update_center_from_yaw_pitch();
