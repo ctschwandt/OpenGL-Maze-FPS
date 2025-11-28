@@ -1,4 +1,4 @@
-#include "mygllib/PlayerMovement.h"
+#include "PlayerMovement.h"
 
 #include <algorithm>
 #include <cmath>
@@ -41,7 +41,7 @@ namespace
                          velocity.z * velocity.z);
     }
 
-    void apply_friction(mygllib::PlayerMovement & state,
+    void apply_friction(game::PlayerMovement & state,
                         float friction,
                         float dt)
     {
@@ -58,7 +58,7 @@ namespace
         state.velocity.z *= scale;
     }
 
-    void accelerate(mygllib::PlayerMovement & state,
+    void accelerate(game::PlayerMovement & state,
                     const glm::vec3 & wishDir,
                     float wishSpeed,
                     float accel,
@@ -78,7 +78,7 @@ namespace
     }
 }
 
-namespace mygllib
+namespace game
 {
     PlayerMovement & player_movement_state()
     {
@@ -86,7 +86,7 @@ namespace mygllib
         return state;
     }
 
-    void update_player_movement(const GLFWInput & input, float dt, View & view)
+    void update_player_movement(const mygllib::GLFWInput & input, float dt, mygllib::View & view)
     {
         PlayerMovement & state = player_movement_state();
 
@@ -239,3 +239,4 @@ namespace mygllib
         view.eyez() = state.position.z;
     }
 }
+

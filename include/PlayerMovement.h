@@ -6,7 +6,10 @@ namespace mygllib
 {
     class GLFWInput;
     class View;
+}
 
+namespace game
+{
     struct PlayerMovement
     {
         glm::vec3 position{0.0f};
@@ -44,6 +47,6 @@ namespace mygllib
     PlayerMovement & player_movement_state();
 
     // Main movement update that applies input-driven acceleration, friction, dash, and slide.
-    void update_player_movement(const GLFWInput & input, float dt, View & view);
+    void update_player_movement(const mygllib::GLFWInput & input, float dt, mygllib::View & view);
 }
 
