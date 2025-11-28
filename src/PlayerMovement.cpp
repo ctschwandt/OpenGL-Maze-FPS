@@ -162,7 +162,7 @@ namespace game
                 float speed = glm::length(horiz);
                 if (speed > 0.0f)
                 {
-                    float boostFactor = 1.2f; // tweak or set to 1.0f to disable
+                    float boostFactor = 1.6f; // tweak or set to 1.0f to disable
                     horiz = (horiz / speed) * (speed * boostFactor);
                     state.velocity.x = horiz.x;
                     state.velocity.z = horiz.z;
