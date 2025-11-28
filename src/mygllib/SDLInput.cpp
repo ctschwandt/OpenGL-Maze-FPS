@@ -8,7 +8,8 @@ namespace mygllib
           mouse_delta_y_(0.0),
           quit_requested_(false)
     {
-        SDL_SetRelativeMouseMode(SDL_FALSE);
+        // Hide the cursor and confine it to the window so movement behaves like an FPS.
+        SDL_SetRelativeMouseMode(SDL_TRUE);
     }
 
     void SDLInput::begin_frame()
