@@ -49,4 +49,10 @@ namespace mygllib
         int state = glfwGetKey(window_, key);
         return state == GLFW_PRESS || state == GLFW_REPEAT;
     }
+
+    bool GLFWInput::mouse_button_down(int button) const
+    {
+        int state = glfwGetMouseButton(window_, button);
+        return state == GLFW_PRESS;
+    }
 }
