@@ -80,6 +80,7 @@ public:
     Cell & operator()(int r, int c);
     void   move_once();
     bool is_wall_tile(int tr, int tc) const;
+    bool hits_wall(float x, float z, float radius) const;
     
     // member variables //
     std::vector<Cell> cells;

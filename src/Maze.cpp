@@ -2,6 +2,9 @@
 
 #include "Maze.h"
 
+#include <algorithm>
+#include <cmath>
+
 bool verbose = false;
 
 //======================================================================
@@ -302,7 +305,7 @@ bool Maze::is_wall_tile(int tr, int tc) const
         if (above.neighbors[S] == &below || below.neighbors[N] == &above)
             return false;
 
-        return true; // no passage -> wall
+        return true;
     }
 
     // Vertical edge (between two horizontal neighbor cells)
@@ -330,6 +333,40 @@ bool Maze::is_wall_tile(int tr, int tc) const
 
     // Fallback (shouldn't happen): be safe and say it's a wall
     return true;
+}
+
+bool Maze::hits_wall(float x, float z, float radius) const
+{
+    int baseR = static_cast<int>(std::floor(z));
+    int baseC = static_cast<int>(std::floor(x));
+
+    for (int dr = -1; dr <= 1; ++dr)
+    {
+        for (int dc = -1; dc <= 1; ++dc)
+        {
+            int tr = baseR + dr;
+            int tc = baseC + dc;
+            if (!is_wall_tile(tr, tc))
+                continue;
+
+            float minX = static_cast<float>(tc);
+            float maxX = minX + 1.0f;
+            float minZ = static_cast<float>(tr);
+            float maxZ = minZ + 1.0f;
+
+            float closestX = std::clamp(x, minX, maxX);
+            float closestZ = std::clamp(z, minZ, maxZ);
+
+            float dx = x - closestX;
+            float dz = z - closestZ;
+            if (dx * dx + dz * dz <= radius * radius)
+            {
+                return true;
+            }
+        }
+    }
+
+    return false;
 }
 
 //======================================================================
