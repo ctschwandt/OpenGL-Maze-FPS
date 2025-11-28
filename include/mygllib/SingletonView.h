@@ -18,4 +18,4 @@ namespace mygllib
     };
 }
 
-#endif
+#endif // SINGLETONVIEW_H

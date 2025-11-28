@@ -99,4 +99,4 @@ void debug_println(const Maze::Cell &);
 void debug_println(const Maze::Path &);
 void debug_println(const Maze &);
 
-#endif
+#endif // MAZE_H

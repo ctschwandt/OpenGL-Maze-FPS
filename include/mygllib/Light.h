@@ -78,4 +78,4 @@ namespace mygllib
     };
 }
 
-#endif
+#endif // LIGHT_H
