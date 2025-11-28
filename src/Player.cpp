@@ -1,10 +1,11 @@
-#include "PlayerMovement.h"
+#include "Player.h"
 
 #include <algorithm>
 #include <cmath>
 
 #include <glm/gtx/norm.hpp>
 
+#include "Maze.h"
 #include "mygllib/GLFWInput.h"
 #include "mygllib/View.h"
 
@@ -238,5 +239,15 @@ namespace game
         view.eyey() = state.position.y;
         view.eyez() = state.position.z;
     }
-}
 
+    void Player::update(const Maze & maze, const PlayerInput & input, float dt)
+    {
+        (void)maze;
+        (void)input;
+
+        pos += vel * dt;
+
+        if (fireCooldown > 0.0f)
+            fireCooldown = std::max(0.0f, fireCooldown - dt);
+    }
+}
