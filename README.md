@@ -1,6 +1,6 @@
 # OpenGL Maze FPS (in progress)
 
-A 3D first-person shooter that uses OpenGL with GLFW for windowing/input to render randomly generated maze environments. The project features dual camera views (first-person and bird's-eye), textured walls/objects, moving robot enemies, shooting mechanics, and basic collision detection.
+A 3D first-person shooter that uses OpenGL with SDL2 for windowing/input to render randomly generated maze environments. The project features dual camera views (first-person and bird's-eye), textured walls/objects, moving robot enemies, shooting mechanics, and basic collision detection.
 
 ## Repository structure
 
@@ -16,7 +16,7 @@ A 3D first-person shooter that uses OpenGL with GLFW for windowing/input to rend
 
 ## Getting started
 
-1. Ensure you have a modern C++ compiler along with OpenGL, GLFW, and GLEW installed.
+1. Ensure you have a modern C++ compiler along with OpenGL, SDL2, and GLEW installed.
 2. Build the project from the repository root using the provided `Makefile`:
 
    ```sh

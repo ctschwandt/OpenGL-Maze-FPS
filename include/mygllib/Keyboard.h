@@ -8,12 +8,12 @@
 
 namespace mygllib
 {
-    class GLFWInput;
+    class SDLInput;
 
     class Keyboard
     {
     public:
-        static void update_from_input(const GLFWInput &input, float dt);
+        static void update_from_input(SDLInput &input, float dt);
     };
 
     class KeyboardBase
