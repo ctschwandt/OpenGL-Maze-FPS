@@ -2,6 +2,8 @@
 
 #include "Maze.h"
 
+#include <algorithm>
+
 bool verbose = false;
 
 //======================================================================
@@ -330,6 +332,39 @@ bool Maze::is_wall_tile(int tr, int tc) const
 
     // Fallback (shouldn't happen): be safe and say it's a wall
     return true;
+}
+
+bool Maze::hits_wall(float x, float z, float radius) const
+{
+    int centerR = static_cast<int>(std::floor(z));
+    int centerC = static_cast<int>(std::floor(x));
+    int reach = static_cast<int>(std::ceil(radius));
+
+    for (int dr = -reach; dr <= reach; ++dr)
+    {
+        for (int dc = -reach; dc <= reach; ++dc)
+        {
+            int tr = centerR + dr;
+            int tc = centerC + dc;
+            if (!is_wall_tile(tr, tc))
+                continue;
+
+            float minX = static_cast<float>(tc);
+            float maxX = minX + 1.0f;
+            float minZ = static_cast<float>(tr);
+            float maxZ = minZ + 1.0f;
+
+            float closestX = std::clamp(x, minX, maxX);
+            float closestZ = std::clamp(z, minZ, maxZ);
+            float dx = x - closestX;
+            float dz = z - closestZ;
+            if (dx * dx + dz * dz <= radius * radius)
+            {
+                return true;
+            }
+        }
+    }
+    return false;
 }
 
 //======================================================================
