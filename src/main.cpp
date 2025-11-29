@@ -1,6 +1,7 @@
 // File: main.cpp
 // Name: Cole Schwandt
 
+#include <algorithm>
 #include <exception>
 #include <iostream>
 #include <GL/glew.h>
@@ -143,6 +144,23 @@ void draw_maze_columns()
 }
 
 //==============================================================
+// Camera helpers
+//==============================================================
+void apply_top_down_view(const game::PlayerMovement & playerState,
+                         mygllib::View & view,
+                         float tileScale,
+                         const Maze & maze)
+{
+    float mazeSpan     = tileScale * static_cast<float>(maze.tiles_n);
+    float cameraHeight = std::max(mazeSpan, 120.0f);
+
+    view.eye(playerState.position.x, cameraHeight, playerState.position.z);
+    view.ref(playerState.position.x, playerState.groundHeight, playerState.position.z);
+    view.up(0.0f, 0.0f, -1.0f);
+    view.type() = mygllib::View::PERSPECTIVE;
+}
+
+//==============================================================
 // User Input
 //==============================================================
 void handle_function_keys(const mygllib::GLFWInput &input)
@@ -150,10 +168,12 @@ void handle_function_keys(const mygllib::GLFWInput &input)
     static bool f1_down_previous = false;
     static bool f2_down_previous = false;
     static bool f3_down_previous = false;
+    static bool f4_down_previous = false;
 
     bool f1_down = input.key_down(GLFW_KEY_F1);
     bool f2_down = input.key_down(GLFW_KEY_F2);
     bool f3_down = input.key_down(GLFW_KEY_F3);
+    bool f4_down = input.key_down(GLFW_KEY_F4);
 
     if (f1_down && !f1_down_previous)
     {
@@ -167,10 +187,15 @@ void handle_function_keys(const mygllib::GLFWInput &input)
     {
         globals::draw_wire = !globals::draw_wire;
     }
+    if (f4_down && !f4_down_previous)
+    {
+        globals::top_down_view = !globals::top_down_view;
+    }
 
     f1_down_previous = f1_down;
     f2_down_previous = f2_down;
     f3_down_previous = f3_down;
+    f4_down_previous = f4_down;
 }
 
 //==============================================================
@@ -276,6 +301,8 @@ int main(int argc, char ** argv)
     // ----- Main loop -----
     while (!glfwWindowShouldClose(window))
     {
+        mygllib::View & view = *(mygllib::SingletonView::getInstance());
+
         // 1) Reset deltas for this frame
         input.begin_frame();
 
@@ -292,8 +319,17 @@ int main(int argc, char ** argv)
         handle_function_keys(input);
         mygllib::Mouse::update_from_input(input);
         mygllib::Keyboard::update_from_input(input, dt);
-        game::update_player_movement(input, dt, *mygllib::SingletonView::getInstance(), maze, TILE_SCALE);
-        mygllib::SingletonView::getInstance()->update_center_from_yaw_pitch();
+        game::update_player_movement(input, dt, view, maze, TILE_SCALE);
+
+        if (globals::top_down_view)
+        {
+            apply_top_down_view(game::player_movement_state(), view, TILE_SCALE, maze);
+        }
+        else
+        {
+            view.up(0.0f, 1.0f, 0.0f);
+            view.update_center_from_yaw_pitch();
+        }
 
         // 5) Render
         display();
