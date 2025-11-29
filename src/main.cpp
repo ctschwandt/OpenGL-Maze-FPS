@@ -23,6 +23,7 @@
 #include "mygllib/Light.h"
 #include "myglm.h"
 #include "Player.h"
+#include "Projectile.h"
 
 //==============================================================
 // Globals
