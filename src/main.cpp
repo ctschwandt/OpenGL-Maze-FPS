@@ -214,6 +214,18 @@ void draw_player_avatar(const game::PlayerMovement & playerState)
     glPopMatrix();
 }
 
+void draw_projectiles(const std::vector<game::Projectile> & projectiles)
+{
+    const float radius = 0.2f;
+
+    glColor3f(1.0f, 0.9f, 0.2f);
+    for (const auto & p : projectiles)
+    {
+        draw_box(p.position.x, p.position.y, p.position.z,
+                 radius, radius, radius);
+    }
+}
+
 //==============================================================
 // Camera helpers
 //==============================================================
@@ -335,6 +347,7 @@ void display()
     glPopMatrix();
 
     draw_player_avatar(game::player_movement_state());
+    draw_projectiles(game::active_projectiles());
 
 }
 
@@ -421,6 +434,7 @@ int main(int argc, char ** argv)
         mygllib::Mouse::update_from_input(input);
         mygllib::Keyboard::update_from_input(input, dt);
         game::update_player_movement(input, dt, view, maze, TILE_SCALE);
+        game::update_projectiles(dt, maze, TILE_SCALE);
 
         if (globals::top_down_view)
         {
