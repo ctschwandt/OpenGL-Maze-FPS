@@ -29,6 +29,10 @@
 //==============================================================
 Maze maze(5);
 const float TILE_SCALE = 20.0f;
+const float TOP_DOWN_ZOOM_STEP = 0.1f;
+const float TOP_DOWN_ZOOM_MIN  = 0.25f;
+const float TOP_DOWN_ZOOM_MAX  = 4.0f;
+float top_down_zoom = 1.0f;
 
 //==============================================================
 // Lighting
@@ -152,12 +156,37 @@ void apply_top_down_view(const game::PlayerMovement & playerState,
                          const Maze & maze)
 {
     float mazeSpan     = tileScale * static_cast<float>(maze.tiles_n);
-    float cameraHeight = std::max(mazeSpan, 120.0f);
+    float cameraHeight = std::max(mazeSpan, 120.0f) * top_down_zoom;
 
     view.eye(playerState.position.x, cameraHeight, playerState.position.z);
     view.ref(playerState.position.x, playerState.groundHeight, playerState.position.z);
     view.up(0.0f, 0.0f, -1.0f);
     view.type() = mygllib::View::PERSPECTIVE;
+}
+
+void handle_top_down_zoom(const mygllib::GLFWInput & input)
+{
+    static bool z_down_previous = false;
+
+    bool z_down    = input.key_down(GLFW_KEY_Z);
+    bool shift_down = input.key_down(GLFW_KEY_LEFT_SHIFT) ||
+                      input.key_down(GLFW_KEY_RIGHT_SHIFT);
+
+    if (z_down && !z_down_previous)
+    {
+        if (shift_down)
+        {
+            top_down_zoom = std::max(TOP_DOWN_ZOOM_MIN,
+                                     top_down_zoom - TOP_DOWN_ZOOM_STEP);
+        }
+        else
+        {
+            top_down_zoom = std::min(TOP_DOWN_ZOOM_MAX,
+                                     top_down_zoom + TOP_DOWN_ZOOM_STEP);
+        }
+    }
+
+    z_down_previous = z_down;
 }
 
 //==============================================================
@@ -323,6 +352,7 @@ int main(int argc, char ** argv)
 
         if (globals::top_down_view)
         {
+            handle_top_down_zoom(input);
             apply_top_down_view(game::player_movement_state(), view, TILE_SCALE, maze);
         }
         else
