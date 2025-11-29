@@ -87,7 +87,11 @@ namespace game
         return state;
     }
 
-    void update_player_movement(const mygllib::GLFWInput & input, float dt, mygllib::View & view)
+    void update_player_movement(const mygllib::GLFWInput & input,
+                                float dt,
+                                mygllib::View & view,
+                                const Maze & maze,
+                                float tileScale)
     {
         PlayerMovement & state = player_movement_state();
 
@@ -219,12 +223,43 @@ namespace game
         }
 
         // --- INTEGRATE POSITION ---
-        state.position += state.velocity * dt;
+        glm::vec3 newPosition = state.position + state.velocity * dt;
+
+        auto collides_with_wall = [&](float worldX, float worldZ, float radius) -> bool
+        {
+            int x0 = static_cast<int>(std::floor((worldX - radius) / tileScale));
+            int x1 = static_cast<int>(std::floor((worldX + radius) / tileScale));
+            int z0 = static_cast<int>(std::floor((worldZ - radius) / tileScale));
+            int z1 = static_cast<int>(std::floor((worldZ + radius) / tileScale));
+
+            for (int tr = z0; tr <= z1; ++tr)
+            {
+                for (int tc = x0; tc <= x1; ++tc)
+                {
+                    if (maze.is_wall_tile(tr, tc))
+                        return true;
+                }
+            }
+
+            return false;
+        };
+
+        // Resolve horizontal collisions axis-by-axis to avoid tunneling into corners
+        if (collides_with_wall(newPosition.x, state.position.z, state.collisionRadius))
+        {
+            newPosition.x   = state.position.x;
+            state.velocity.x = 0.0f;
+        }
+        if (collides_with_wall(newPosition.x, newPosition.z, state.collisionRadius))
+        {
+            newPosition.z   = state.position.z;
+            state.velocity.z = 0.0f;
+        }
 
         // Simple ground collision/response (flat plane at groundHeight)
-        if (state.position.y <= state.groundHeight)
+        if (newPosition.y <= state.groundHeight)
         {
-            state.position.y = state.groundHeight;
+            newPosition.y = state.groundHeight;
             if (state.velocity.y < 0.0f)
                 state.velocity.y = 0.0f;
             state.onGround = true;
@@ -233,6 +268,8 @@ namespace game
         {
             state.onGround = false;
         }
+
+        state.position = newPosition;
 
         // --- SYNC BACK TO VIEW ---
         view.eyex() = state.position.x;
