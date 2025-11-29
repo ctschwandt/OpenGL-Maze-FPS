@@ -27,6 +27,7 @@
 // Globals
 //==============================================================
 Maze maze(5);
+const float TILE_SCALE = 20.0f;
 
 //==============================================================
 // Lighting
@@ -186,8 +187,7 @@ void display()
     //mygllib::Light::all_off();
     glLineWidth(1.0f);
 
-    const float S = 20.0f;
-    float maze_span = S * maze.tiles_n;
+    float maze_span = TILE_SCALE * maze.tiles_n;
 
     if (globals::draw_plane)
     {
@@ -208,7 +208,7 @@ void display()
     glColor3f(0.2f, 0.2f, 0.2f);
     glPushMatrix();
     {
-        glScalef(S, S, S);
+        glScalef(TILE_SCALE, TILE_SCALE, TILE_SCALE);
         draw_maze_columns();
     }
     glPopMatrix();
@@ -225,7 +225,9 @@ int main(int argc, char ** argv)
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
     // ----- Maze generation (text debug) -----
-    maze.init(0, 0);
+    int start_r = std::rand() % maze.n;
+    int start_c = std::rand() % maze.n;
+    maze.init(start_r, start_c);
     maze.print();
     std::cout << std::endl;
 
@@ -253,6 +255,15 @@ int main(int argc, char ** argv)
         {
             mygllib::Reshape::reshape(w, h);
         });
+
+    // Place the camera/player at the center of the chosen start cell
+    {
+        float start_x = TILE_SCALE * (2.0f * static_cast<float>(start_c) + 1.5f);
+        float start_z = TILE_SCALE * (2.0f * static_cast<float>(start_r) + 1.5f);
+
+        mygllib::View & view = *(mygllib::SingletonView::getInstance());
+        view.eye(start_x, 2.0f, start_z);
+    }
 
     init();
 
