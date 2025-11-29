@@ -6,6 +6,7 @@
 
 #include <glm/gtx/norm.hpp>
 
+#include "Draw.h"
 #include "Maze.h"
 
 namespace game
@@ -45,8 +46,6 @@ namespace game
         radius = 0.8f;
         height = 1.4f;
     }
-
-    void draw_cylinder(float radius, float height, int segments = 24);
 
     void Enemy::update(float dt, const glm::vec3 & playerPos, const Maze & maze)
     {
