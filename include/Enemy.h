@@ -3,6 +3,8 @@
 
 #include "Actor.h"
 
+class Maze;
+
 namespace game
 {
     enum class EnemyType
@@ -22,6 +24,9 @@ namespace game
         EnemyType type() const { return type_; }
         float move_speed() const { return moveSpeed_; }
         float detection_range() const { return detectionRange_; }
+
+        virtual void update(float dt, const glm::vec3 & playerPos, const Maze & maze);
+        virtual void draw() const;
 
     protected:
         EnemyType type_;
