@@ -6,6 +6,7 @@
 #include <glm/gtx/norm.hpp>
 
 #include "Maze.h"
+#include "Globals.h"
 #include "mygllib/GLFWInput.h"
 #include "mygllib/View.h"
 
@@ -115,19 +116,25 @@ namespace game
             state.initialized  = true;
         }
 
-        // Movement basis from camera yaw/pitch
-        const float yaw   = static_cast<float>(view.yaw());
-        const float pitch = static_cast<float>(view.pitch());
+        // Movement basis: camera-relative in FPS view, world-relative in top-down
+        glm::vec3 forward(0.0f, 0.0f, -1.0f);
+        glm::vec3 right  (1.0f, 0.0f,  0.0f);
 
-        glm::vec3 forward = forward_from_angles(yaw, pitch);
-        glm::vec3 right   = glm::normalize(glm::cross(forward, WORLD_UP));
+        if (!globals::top_down_view)
+        {
+            const float yaw   = static_cast<float>(view.yaw());
+            const float pitch = static_cast<float>(view.pitch());
 
-        // Use horizontal movement only for movement basis
-        forward = horizontalize(forward);
-        right   = horizontalize(right);
+            forward = forward_from_angles(yaw, pitch);
+            right   = glm::normalize(glm::cross(forward, WORLD_UP));
 
-        if (glm::length2(forward) == 0.0f)
-            forward = glm::vec3(0.0f, 0.0f, -1.0f);
+            // Use horizontal movement only for movement basis
+            forward = horizontalize(forward);
+            right   = horizontalize(right);
+
+            if (glm::length2(forward) == 0.0f)
+                forward = glm::vec3(0.0f, 0.0f, -1.0f);
+        }
 
         // Build wish direction from WASD
         glm::vec3 wishDir(0.0f);
