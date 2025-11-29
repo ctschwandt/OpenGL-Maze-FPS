@@ -43,7 +43,7 @@ namespace game
         float dashDuration     = 0.12f;
         float slideDuration    = 0.5f;
         float slideThreshold   = 8.0f;
-        float collisionRadius  = 8.0f;   // horizontal collision radius in world units
+        float collisionRadius  = 1.0f;   // horizontal collision radius in world units
 
         // Utility state
         float groundHeight     = 0.0f;
