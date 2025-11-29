@@ -385,7 +385,10 @@ int main(int argc, char ** argv)
         float start_z = TILE_SCALE * (2.0f * static_cast<float>(start_r) + 1.5f);
 
         mygllib::View & view = *(mygllib::SingletonView::getInstance());
-        view.eye(start_x, 2.0f, start_z);
+        float yaw = static_cast<float>(view.yaw());
+        float eyeOffsetX = std::cos(yaw) * game::PLAYER_RADIUS;
+        float eyeOffsetZ = std::sin(yaw) * game::PLAYER_RADIUS;
+        view.eye(start_x + eyeOffsetX, game::PLAYER_EYE_HEIGHT, start_z + eyeOffsetZ);
     }
 
     init();

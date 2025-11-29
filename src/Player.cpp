@@ -99,9 +99,17 @@ namespace game
         if (!state.initialized)
         {
             glm::vec3 eyePos(view.eyex(), view.eyey(), view.eyez());
-            state.position     = glm::vec3(eyePos.x,
+            glm::vec3 forward = horizontalize(forward_from_angles(
+                static_cast<float>(view.yaw()),
+                static_cast<float>(view.pitch())));
+            if (glm::length2(forward) == 0.0f)
+                forward = glm::vec3(0.0f, 0.0f, -1.0f);
+
+            glm::vec3 eyeOffset = forward * PLAYER_RADIUS;
+
+            state.position     = glm::vec3(eyePos.x - eyeOffset.x,
                                             eyePos.y - PLAYER_EYE_HEIGHT,
-                                            eyePos.z);
+                                            eyePos.z - eyeOffset.z);
             state.groundHeight = state.position.y;
             state.collisionRadius = PLAYER_RADIUS;
             state.initialized  = true;
@@ -117,6 +125,9 @@ namespace game
         // Use horizontal movement only for movement basis
         forward = horizontalize(forward);
         right   = horizontalize(right);
+
+        if (glm::length2(forward) == 0.0f)
+            forward = glm::vec3(0.0f, 0.0f, -1.0f);
 
         // Build wish direction from WASD
         glm::vec3 wishDir(0.0f);
@@ -276,9 +287,11 @@ namespace game
         state.position = newPosition;
 
         // --- SYNC BACK TO VIEW ---
-        view.eyex() = state.position.x;
+        glm::vec3 eyeOffset = forward * PLAYER_RADIUS;
+
+        view.eyex() = state.position.x + eyeOffset.x;
         view.eyey() = state.position.y + PLAYER_EYE_HEIGHT;
-        view.eyez() = state.position.z;
+        view.eyez() = state.position.z + eyeOffset.z;
     }
 
     void Player::update(const Maze & maze, const PlayerInput & input, float dt)
