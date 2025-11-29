@@ -8,6 +8,7 @@
 #include <glm/gtx/norm.hpp>
 
 #include "Maze.h"
+#include "Projectile.h"
 #include "Globals.h"
 #include "mygllib/GLFWInput.h"
 #include "mygllib/View.h"
@@ -91,7 +92,9 @@ namespace
         state.fireCooldown = std::max(0.0f, state.fireCooldown - dt);
 
         int buttonState = glfwGetMouseButton(input.window(), GLFW_MOUSE_BUTTON_LEFT);
-        bool firing     = (buttonState == GLFW_PRESS);
+        bool firing     = (buttonState == GLFW_PRESS) ||
+                          input.key_down(GLFW_KEY_ENTER) ||
+                          input.key_down(GLFW_KEY_KP_ENTER);
 
         if (!firing || state.fireCooldown > 0.0f)
             return;
@@ -111,12 +114,6 @@ namespace
 
 namespace game
 {
-    std::vector<Projectile> & active_projectiles()
-    {
-        static std::vector<Projectile> projectiles;
-        return projectiles;
-    }
-
     PlayerMovement & player_movement_state()
     {
         static PlayerMovement state;
@@ -172,6 +169,9 @@ namespace game
 
             if (glm::length2(forward) == 0.0f)
                 forward = glm::vec3(0.0f, 0.0f, -1.0f);
+
+            if (glm::length2(aimForward) > 0.0f)
+                state.facingDirection = glm::normalize(aimForward);
         }
 
         // Build wish direction from WASD
@@ -183,6 +183,9 @@ namespace game
 
         if (glm::length2(wishDir) > 0.0f)
             wishDir = glm::normalize(wishDir);
+
+        if (globals::top_down_view && glm::length2(wishDir) > 0.0f)
+            state.facingDirection = wishDir;
 
         // Edge-triggered inputs
         bool dashPressed = input.key_down(GLFW_KEY_LEFT_SHIFT) && !state.dashKeyLast;
@@ -336,7 +339,11 @@ namespace game
                                           state.position.y + PLAYER_EYE_HEIGHT,
                                           state.position.z + eyeOffset.z);
 
-        try_fire(state, input, aimForward, eyePosition, dt);
+        glm::vec3 aimDirection = globals::top_down_view
+                               ? state.facingDirection
+                               : aimForward;
+
+        try_fire(state, input, aimDirection, eyePosition, dt);
 
         // --- SYNC BACK TO VIEW ---
         view.eyex() = eyePosition.x;
@@ -355,29 +362,4 @@ namespace game
             fireCooldown = std::max(0.0f, fireCooldown - dt);
     }
 
-    void update_projectiles(float dt, const Maze & maze, float tileScale)
-    {
-        auto & projectiles = active_projectiles();
-
-        auto hits_wall = [&](const glm::vec3 & pos) -> bool
-        {
-            int tc = static_cast<int>(std::floor(pos.x / tileScale));
-            int tr = static_cast<int>(std::floor(pos.z / tileScale));
-            return maze.is_wall_tile(tr, tc);
-        };
-
-        for (auto & p : projectiles)
-        {
-            p.position      += p.velocity * dt;
-            p.remainingLife -= dt;
-
-            if (hits_wall(p.position) || p.remainingLife <= 0.0f)
-                p.remainingLife = -1.0f;
-        }
-
-        projectiles.erase(
-            std::remove_if(projectiles.begin(), projectiles.end(),
-                           [](const Projectile & p) { return p.remainingLife <= 0.0f; }),
-            projectiles.end());
-    }
 }

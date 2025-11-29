@@ -2,9 +2,9 @@
 #define PLAYER_H
 
 #include <glm/glm.hpp>
-#include <vector>
-
 #include "Actor.h"
+
+#include <vector>
 
 class Maze;
 
@@ -25,17 +25,11 @@ namespace game
     {
     };
 
-    struct Projectile
-    {
-        glm::vec3 position{0.0f};
-        glm::vec3 velocity{0.0f};
-        float remainingLife{2.5f};
-    };
-
     struct PlayerMovement
     {
         glm::vec3 position{0.0f};
         glm::vec3 velocity{0.0f};
+        glm::vec3 facingDirection{0.0f, 0.0f, -1.0f};
         bool onGround{true};
         bool dashing{false};
         bool sliding{false};
@@ -87,9 +81,6 @@ namespace game
                                 const Maze & maze,
                                 float tileScale);
 
-    // Projectiles
-    std::vector<Projectile> & active_projectiles();
-    void update_projectiles(float dt, const Maze & maze, float tileScale);
 }
 
 #endif // PLAYER_H
