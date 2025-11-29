@@ -292,7 +292,7 @@ int main(int argc, char ** argv)
         handle_function_keys(input);
         mygllib::Mouse::update_from_input(input);
         mygllib::Keyboard::update_from_input(input, dt);
-        game::update_player_movement(input, dt, *mygllib::SingletonView::getInstance());
+        game::update_player_movement(input, dt, *mygllib::SingletonView::getInstance(), maze, TILE_SCALE);
         mygllib::SingletonView::getInstance()->update_center_from_yaw_pitch();
 
         // 5) Render
