@@ -34,6 +34,10 @@ namespace game
         float dashTimer{0.0f};
         float slideTimer{0.0f};
 
+        // Combat
+        int   health{100};
+        float fireCooldown{0.0f};
+
         // Movement tuning parameters
         float maxGroundSpeed   = 15.0f;
         float maxAirSpeed      = 25.0f;

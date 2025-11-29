@@ -10,6 +10,8 @@
 #include <cstdlib>
 #include <vector>
 
+#include <glm/gtx/norm.hpp>
+
 #include "Globals.h"
 #include "Maze.h"
 #include "mygllib/gl3d.h"
@@ -23,6 +25,7 @@
 #include "mygllib/Light.h"
 #include "myglm.h"
 #include "Player.h"
+#include "Enemy.h"
 
 //==============================================================
 // Globals
@@ -33,6 +36,9 @@ const float TOP_DOWN_ZOOM_STEP = 0.1f;
 const float TOP_DOWN_ZOOM_MIN  = 0.1f;
 const float TOP_DOWN_ZOOM_MAX  = 2.0f;
 float top_down_zoom = 0.2f;
+std::vector<game::Enemy> enemies;
+std::vector<game::Bullet> bullets;
+float global_time = 0.0f;
 
 //==============================================================
 // Lighting
@@ -122,6 +128,17 @@ void draw_box(float cx, float cy, float cz,
     glVertex3f(x0, y0, z1);
 
     glEnd();
+}
+
+glm::vec3 view_forward(const mygllib::View & view)
+{
+    glm::vec3 dir(view.refx() - view.eyex(),
+                  view.refy() - view.eyey(),
+                  view.refz() - view.eyez());
+    float len2 = glm::length2(dir);
+    if (len2 <= 0.0001f)
+        return glm::vec3(0.0f, 0.0f, -1.0f);
+    return dir / std::sqrt(len2);
 }
 
 void draw_maze_columns()
@@ -335,6 +352,8 @@ void display()
     glPopMatrix();
 
     draw_player_avatar(game::player_movement_state());
+    game::draw_enemies(enemies);
+    game::draw_bullets(bullets);
 
 }
 
@@ -389,6 +408,9 @@ int main(int argc, char ** argv)
         float eyeOffsetX = std::cos(yaw) * game::PLAYER_RADIUS;
         float eyeOffsetZ = std::sin(yaw) * game::PLAYER_RADIUS;
         view.eye(start_x + eyeOffsetX, game::PLAYER_EYE_HEIGHT, start_z + eyeOffsetZ);
+
+        glm::vec3 playerStart(start_x, 0.0f, start_z);
+        game::spawn_default_enemies(enemies, maze, TILE_SCALE, playerStart);
     }
 
     init();
@@ -422,6 +444,26 @@ int main(int argc, char ** argv)
         mygllib::Keyboard::update_from_input(input, dt);
         game::update_player_movement(input, dt, view, maze, TILE_SCALE);
 
+        game::PlayerMovement & playerState = game::player_movement_state();
+        playerState.fireCooldown = std::max(0.0f, playerState.fireCooldown - dt);
+
+        glm::vec3 shootDir = view_forward(view);
+        if (glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS &&
+            playerState.fireCooldown <= 0.0f)
+        {
+            game::Bullet bullet;
+            bullet.fromPlayer = true;
+            bullet.radius     = 0.25f;
+            glm::vec3 eyePos(playerState.position.x,
+                             playerState.position.y + game::PLAYER_EYE_HEIGHT,
+                             playerState.position.z);
+            bullet.pos = eyePos + shootDir * (game::PLAYER_RADIUS + bullet.radius + 0.2f);
+            bullet.vel = shootDir * 55.0f;
+            bullet.ttl = 4.0f;
+            bullets.push_back(bullet);
+            playerState.fireCooldown = 0.3f;
+        }
+
         if (globals::top_down_view)
         {
             handle_top_down_zoom(input);
@@ -432,6 +474,10 @@ int main(int argc, char ** argv)
             view.up(0.0f, 1.0f, 0.0f);
             view.update_center_from_yaw_pitch();
         }
+
+        global_time += dt;
+        game::update_enemies(enemies, bullets, dt, maze, playerState, TILE_SCALE, global_time);
+        game::update_bullets(bullets, enemies, dt, maze, playerState, TILE_SCALE);
 
         // 5) Render
         display();

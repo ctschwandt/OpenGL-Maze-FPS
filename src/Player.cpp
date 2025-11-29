@@ -299,6 +299,8 @@ namespace game
         view.eyex() = state.position.x + eyeOffset.x;
         view.eyey() = state.position.y + PLAYER_EYE_HEIGHT;
         view.eyez() = state.position.z + eyeOffset.z;
+
+        state.fireCooldown = std::max(0.0f, state.fireCooldown - dt);
     }
 
     void Player::update(const Maze & maze, const PlayerInput & input, float dt)
