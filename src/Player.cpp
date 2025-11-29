@@ -105,13 +105,13 @@ namespace game
             if (glm::length2(forward) == 0.0f)
                 forward = glm::vec3(0.0f, 0.0f, -1.0f);
 
-            glm::vec3 eyeOffset = forward * (PLAYER_RADIUS + 0.2f);
+            glm::vec3 eyeOffset = forward * PLAYER_EYE_RADIUS;
 
             state.position     = glm::vec3(eyePos.x - eyeOffset.x,
                                             eyePos.y - PLAYER_EYE_HEIGHT,
                                             eyePos.z - eyeOffset.z);
             state.groundHeight = state.position.y;
-            state.collisionRadius = PLAYER_RADIUS;
+            //state.collisionRadius = collisionRadius;
             state.initialized  = true;
         }
 
@@ -287,7 +287,7 @@ namespace game
         state.position = newPosition;
 
         // --- SYNC BACK TO VIEW ---
-        glm::vec3 eyeOffset = forward * (PLAYER_RADIUS + 0.2f);
+        glm::vec3 eyeOffset = forward * PLAYER_EYE_RADIUS;
 
         view.eyex() = state.position.x + eyeOffset.x;
         view.eyey() = state.position.y + PLAYER_EYE_HEIGHT;

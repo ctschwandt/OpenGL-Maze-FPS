@@ -17,7 +17,8 @@ namespace game
 {
     constexpr float PLAYER_BODY_HEIGHT = 1.4f;
     constexpr float PLAYER_EYE_HEIGHT  = PLAYER_BODY_HEIGHT;
-    constexpr float PLAYER_RADIUS      = 0.4f;
+    constexpr float PLAYER_RADIUS      = 0.8f;
+    constexpr float PLAYER_EYE_RADIUS  = PLAYER_RADIUS + 0.08f;
 
     struct PlayerInput
     {
@@ -47,7 +48,7 @@ namespace game
         float dashDuration     = 0.12f;
         float slideDuration    = 0.5f;
         float slideThreshold   = 8.0f;
-        float collisionRadius  = PLAYER_RADIUS;   // horizontal collision radius in world units
+        float collisionRadius  = PLAYER_EYE_RADIUS + 0.3f;   // horizontal collision radius in world units
 
         // Utility state
         float groundHeight     = 0.0f;

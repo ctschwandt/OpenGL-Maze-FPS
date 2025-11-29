@@ -28,11 +28,11 @@
 // Globals
 //==============================================================
 Maze maze(5);
-const float TILE_SCALE = 20.0f;
+const float TILE_SCALE = 15.0f;
 const float TOP_DOWN_ZOOM_STEP = 0.1f;
-const float TOP_DOWN_ZOOM_MIN  = 0.25f;
-const float TOP_DOWN_ZOOM_MAX  = 4.0f;
-float top_down_zoom = 1.0f;
+const float TOP_DOWN_ZOOM_MIN  = 0.1f;
+const float TOP_DOWN_ZOOM_MAX  = 2.0f;
+float top_down_zoom = 0.2f;
 
 //==============================================================
 // Lighting
