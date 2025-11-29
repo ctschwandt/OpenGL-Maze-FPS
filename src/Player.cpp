@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cmath>
+#include <vector>
+#include <GLFW/glfw3.h>
 
 #include <glm/gtx/norm.hpp>
 
@@ -13,6 +15,7 @@
 namespace
 {
     constexpr glm::vec3 WORLD_UP(0.0f, 1.0f, 0.0f);
+    constexpr float PROJECTILE_SPEED = 80.0f;
 
     glm::vec3 forward_from_angles(float yaw, float pitch)
     {
@@ -78,10 +81,42 @@ namespace
         accelSpeed       = std::min(accelSpeed, addSpeed);
         state.velocity  += wishDir * accelSpeed;
     }
+
+    void try_fire(game::PlayerMovement & state,
+                  const mygllib::GLFWInput & input,
+                  const glm::vec3 & aimDirection,
+                  const glm::vec3 & eyePosition,
+                  float dt)
+    {
+        state.fireCooldown = std::max(0.0f, state.fireCooldown - dt);
+
+        int buttonState = glfwGetMouseButton(input.window(), GLFW_MOUSE_BUTTON_LEFT);
+        bool firing     = (buttonState == GLFW_PRESS);
+
+        if (!firing || state.fireCooldown > 0.0f)
+            return;
+
+        glm::vec3 dir = glm::normalize(aimDirection);
+        if (glm::length2(dir) == 0.0f)
+            dir = glm::vec3(0.0f, 0.0f, -1.0f);
+
+        game::Projectile shot;
+        shot.position = eyePosition + dir * (game::PLAYER_EYE_RADIUS * 0.5f);
+        shot.velocity = dir * PROJECTILE_SPEED;
+
+        game::active_projectiles().push_back(shot);
+        state.fireCooldown = state.fireRate;
+    }
 }
 
 namespace game
 {
+    std::vector<Projectile> & active_projectiles()
+    {
+        static std::vector<Projectile> projectiles;
+        return projectiles;
+    }
+
     PlayerMovement & player_movement_state()
     {
         static PlayerMovement state;
@@ -119,6 +154,9 @@ namespace game
         // Movement basis: camera-relative in FPS view, world-relative in top-down
         glm::vec3 forward(0.0f, 0.0f, -1.0f);
         glm::vec3 right  (1.0f, 0.0f,  0.0f);
+        glm::vec3 aimForward = forward_from_angles(
+            static_cast<float>(view.yaw()),
+            static_cast<float>(view.pitch()));
 
         if (!globals::top_down_view)
         {
@@ -293,12 +331,17 @@ namespace game
 
         state.position = newPosition;
 
-        // --- SYNC BACK TO VIEW ---
-        glm::vec3 eyeOffset = forward * PLAYER_EYE_RADIUS;
+        glm::vec3 eyeOffset   = forward * PLAYER_EYE_RADIUS;
+        glm::vec3 eyePosition = glm::vec3(state.position.x + eyeOffset.x,
+                                          state.position.y + PLAYER_EYE_HEIGHT,
+                                          state.position.z + eyeOffset.z);
 
-        view.eyex() = state.position.x + eyeOffset.x;
-        view.eyey() = state.position.y + PLAYER_EYE_HEIGHT;
-        view.eyez() = state.position.z + eyeOffset.z;
+        try_fire(state, input, aimForward, eyePosition, dt);
+
+        // --- SYNC BACK TO VIEW ---
+        view.eyex() = eyePosition.x;
+        view.eyey() = eyePosition.y;
+        view.eyez() = eyePosition.z;
     }
 
     void Player::update(const Maze & maze, const PlayerInput & input, float dt)
@@ -310,5 +353,31 @@ namespace game
 
         if (fireCooldown > 0.0f)
             fireCooldown = std::max(0.0f, fireCooldown - dt);
+    }
+
+    void update_projectiles(float dt, const Maze & maze, float tileScale)
+    {
+        auto & projectiles = active_projectiles();
+
+        auto hits_wall = [&](const glm::vec3 & pos) -> bool
+        {
+            int tc = static_cast<int>(std::floor(pos.x / tileScale));
+            int tr = static_cast<int>(std::floor(pos.z / tileScale));
+            return maze.is_wall_tile(tr, tc);
+        };
+
+        for (auto & p : projectiles)
+        {
+            p.position      += p.velocity * dt;
+            p.remainingLife -= dt;
+
+            if (hits_wall(p.position) || p.remainingLife <= 0.0f)
+                p.remainingLife = -1.0f;
+        }
+
+        projectiles.erase(
+            std::remove_if(projectiles.begin(), projectiles.end(),
+                           [](const Projectile & p) { return p.remainingLife <= 0.0f; }),
+            projectiles.end());
     }
 }

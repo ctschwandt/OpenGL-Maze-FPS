@@ -2,6 +2,7 @@
 #define PLAYER_H
 
 #include <glm/glm.hpp>
+#include <vector>
 
 #include "Actor.h"
 
@@ -22,6 +23,13 @@ namespace game
 
     struct PlayerInput
     {
+    };
+
+    struct Projectile
+    {
+        glm::vec3 position{0.0f};
+        glm::vec3 velocity{0.0f};
+        float remainingLife{2.5f};
     };
 
     struct PlayerMovement
@@ -49,6 +57,7 @@ namespace game
         float slideDuration    = 0.5f;
         float slideThreshold   = 8.0f;
         float collisionRadius  = PLAYER_EYE_RADIUS + 0.3f;   // horizontal collision radius in world units
+        float fireRate         = 0.2f;    // seconds between shots
 
         // Utility state
         float groundHeight     = 0.0f;
@@ -56,6 +65,7 @@ namespace game
         bool dashKeyLast       = false;
         bool jumpKeyLast       = false;
         bool crouchKeyLast     = false;
+        float fireCooldown     = 0.0f;
     };
 
     class Player : public Actor
@@ -76,6 +86,10 @@ namespace game
                                 mygllib::View & view,
                                 const Maze & maze,
                                 float tileScale);
+
+    // Projectiles
+    std::vector<Projectile> & active_projectiles();
+    void update_projectiles(float dt, const Maze & maze, float tileScale);
 }
 
 #endif // PLAYER_H
