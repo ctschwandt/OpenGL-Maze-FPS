@@ -98,8 +98,12 @@ namespace game
         // One-time init
         if (!state.initialized)
         {
-            state.position     = glm::vec3(view.eyex(), view.eyey(), view.eyez());
+            glm::vec3 eyePos(view.eyex(), view.eyey(), view.eyez());
+            state.position     = glm::vec3(eyePos.x,
+                                            eyePos.y - PLAYER_EYE_HEIGHT,
+                                            eyePos.z);
             state.groundHeight = state.position.y;
+            state.collisionRadius = PLAYER_RADIUS;
             state.initialized  = true;
         }
 
@@ -273,7 +277,7 @@ namespace game
 
         // --- SYNC BACK TO VIEW ---
         view.eyex() = state.position.x;
-        view.eyey() = state.position.y;
+        view.eyey() = state.position.y + PLAYER_EYE_HEIGHT;
         view.eyez() = state.position.z;
     }
 

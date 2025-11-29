@@ -61,7 +61,9 @@ void init()
     glShadeModel(GL_SMOOTH);
     glEnable(GL_NORMALIZE);
 
-    //glFrontFace(GL_CCW);
+    glEnable(GL_CULL_FACE);
+    glCullFace(GL_BACK);
+    glFrontFace(GL_CCW);
 }
 
 //==============================================================
@@ -192,18 +194,16 @@ void draw_cylinder(float radius, float height, int segments = 24)
 
 void draw_player_avatar(const game::PlayerMovement & playerState)
 {
-    const float cylinderHeight   = 1.6f;
-    const float cylinderRadius   = 0.6f;
-    const float topOffsetBelowEye = 0.2f;
+    const float cylinderHeight = game::PLAYER_BODY_HEIGHT;
+    const float cylinderRadius = game::PLAYER_RADIUS;
 
     GLfloat emissive[] = {1.0f, 0.1f, 0.8f, 1.0f};
     GLfloat emissiveOff[] = {0.0f, 0.0f, 0.0f, 1.0f};
 
     glPushMatrix();
     {
-        float verticalOffset = (cylinderHeight * 0.5f) + topOffsetBelowEye;
         glTranslatef(playerState.position.x,
-                     playerState.position.y - verticalOffset,
+                     playerState.position.y + (cylinderHeight * 0.5f),
                      playerState.position.z);
 
         glColor3f(1.0f, 0.0f, 0.8f);
