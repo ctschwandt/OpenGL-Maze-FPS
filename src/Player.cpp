@@ -3,15 +3,15 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
-#include <GLFW/glfw3.h>
-
-#include <glm/gtx/norm.hpp>
-
 #include "Maze.h"
 #include "Projectile.h"
 #include "Globals.h"
 #include "mygllib/GLFWInput.h"
 #include "mygllib/View.h"
+
+#include <glm/gtx/norm.hpp>
+#include <GLFW/glfw3.h>
+
 
 namespace
 {
