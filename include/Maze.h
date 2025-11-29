@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <stdexcept>
+#include <cstdint>
 
 // directions North, East, South, West
 enum DIR
@@ -69,7 +70,8 @@ public:
         : cells(size * size),
           path(),
           n(size),
-          tiles_n(2 * n + 1)
+          tiles_n(2 * n + 1),
+          wall_tiles()           // will be filled in build_wall_tiles()
     {}
 
     ~Maze() = default;
@@ -79,16 +81,18 @@ public:
     void   print();
     Cell & operator()(int r, int c);
     void   move_once();
-    bool is_wall_tile(int tr, int tc) const;
-    
-    // member variables //
-    std::vector<Cell> cells;
-    Path              path;
-    int               n;
-    int               tiles_n;
 
-    static Cell*      SENTINEL_CELL;
-    static const int  DELTA[4][2];
+    // Fast lookup using precomputed grid
+    bool   is_wall_tile(int tr, int tc) const;
+
+    // member variables //
+    std::vector<Cell>   cells;
+    Path                path;
+    int                 n;
+    int                 tiles_n;
+
+    static Cell*        SENTINEL_CELL;
+    static const int    DELTA[4][2];
 
     // cell print operator<<
     friend std::ostream & operator<<(std::ostream & cout,
@@ -96,6 +100,15 @@ public:
     // maze print operator<<
     friend std::ostream & operator<<(std::ostream & cout,
                                      const Maze & maze);
+
+private:
+    // 0 = open, 1 = wall; size = tiles_n * tiles_n
+    std::vector<uint8_t> wall_tiles;
+
+    // Build the dense wall grid once after generation.
+    void build_wall_tiles();
+
+    bool compute_wall_tile(int tr, int tc) const;
 };
 
 

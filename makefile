@@ -20,10 +20,17 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
-.PHONY: clean run
+.PHONY: clean c run r asan asanr
 
 r run: $(TARGET)
 	$(TARGET)
 
 c clean:
 	rm -rf $(BUILD_DIR)
+
+asan: CXXFLAGS += -fsanitize=address -fno-omit-frame-pointer
+asan: LDFLAGS  += -fsanitize=address
+asan: clean $(TARGET)
+
+asanr: asan
+	$(TARGET)

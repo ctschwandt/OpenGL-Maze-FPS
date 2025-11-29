@@ -8,8 +8,7 @@ bool verbose = false;
 // Maze
 //======================================================================
 
-// A dummy cell instance representing walls that shouldn't be punched.
-// store a pointer to this instance in SENTINEL_CELL.
+// A dummy cell instance representing walls that shouldn't be punched
 namespace
 {
     Maze::Cell SENTINEL_INSTANCE(-1, -1, true);
@@ -192,6 +191,9 @@ void Maze::init(int start_r, int start_c)
     if (start_r < 0 || start_r >= n || start_c < 0 || start_c >= n)
         throw std::out_of_range("Maze::init: invalid start cell");
 
+    // tiles_n depends on n; keep it consistent if n was changed externally
+    tiles_n = 2 * n + 1;
+
     // reset all cells
     for (int r = 0; r < n; ++r)
     {
@@ -236,6 +238,9 @@ void Maze::init(int start_r, int start_c)
         if (verbose)
             print();
     }
+
+    // Build precomputed wall tile grid after maze is fully carved
+    build_wall_tiles();
 }
 
 //----------------------------------------------------------------------
@@ -266,11 +271,17 @@ Maze::Cell* Maze::Path::top()
     return phead;
 }
 
-bool Maze::is_wall_tile(int tr, int tc) const
-{
-    int tileN = 2 * n + 1;
+//----------------------------------------------------------------------
+// Wall grid helpers
+//----------------------------------------------------------------------
 
-    // Out of bounds -> treat as wall
+// Compute whether a given tile (tr, tc) is a wall based on cell neighbors.
+// This is essentially your old is_wall_tile logic, factored out.
+bool Maze::compute_wall_tile(int tr, int tc) const
+{
+    int tileN = tiles_n;
+
+    // Out of bounds -> treat as wall (for safety)
     if (tr < 0 || tr >= tileN || tc < 0 || tc >= tileN)
         return true;
 
@@ -330,6 +341,39 @@ bool Maze::is_wall_tile(int tr, int tc) const
 
     // Fallback (shouldn't happen): be safe and say it's a wall
     return true;
+}
+
+// Build the dense wall grid once after generation.
+void Maze::build_wall_tiles()
+{
+    // allocate/resize: 1 byte per tile (0 = open, 1 = wall)
+    wall_tiles.assign(tiles_n * tiles_n, 1);
+
+    for (int tr = 0; tr < tiles_n; ++tr)
+    {
+        for (int tc = 0; tc < tiles_n; ++tc)
+        {
+            bool w = compute_wall_tile(tr, tc);
+            wall_tiles[tr * tiles_n + tc] = static_cast<uint8_t>(w ? 1 : 0);
+        }
+    }
+}
+
+// Fast lookup using precomputed grid.
+bool Maze::is_wall_tile(int tr, int tc) const
+{
+    // Out of bounds -> treat as wall (consistent with old behavior)
+    if (tr < 0 || tr >= tiles_n || tc < 0 || tc >= tiles_n)
+        return true;
+
+    if (wall_tiles.empty())
+    {
+        // Safety net: if someone calls this before init(), fall back
+        // to computing directly. You could also assert here instead.
+        return compute_wall_tile(tr, tc);
+    }
+
+    return wall_tiles[tr * tiles_n + tc] != 0;
 }
 
 //======================================================================
