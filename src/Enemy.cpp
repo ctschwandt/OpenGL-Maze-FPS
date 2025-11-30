@@ -116,7 +116,7 @@ namespace game
         {
             constexpr float GROUND_Y   = 0.0f;
             constexpr float TILE_SCALE = 15.0f;
-            constexpr float AGGRESSIVE_RANGE = 6.0f;
+            constexpr float AGGRESSIVE_RANGE = TILE_SCALE;
 
             // CylinderBot stays on the ground plane.
             pos.y = GROUND_Y;
