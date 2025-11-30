@@ -2,7 +2,12 @@
 
 #include <GL/glew.h>
 
+#include <algorithm>
+#include <array>
 #include <cmath>
+#include <cstdlib>
+#include <numeric>
+#include <vector>
 
 #include <glm/gtx/norm.hpp>
 
@@ -45,6 +50,57 @@ namespace game
     {
         radius = 0.8f;
         height = 1.4f;
+    }
+
+    namespace
+    {
+        constexpr float TILE_OFFSET = 0.5f;
+
+        Enemy make_enemy(EnemyType type)
+        {
+            switch (type)
+            {
+            case EnemyType::CylinderBot:
+                return CylinderBot();
+            case EnemyType::SphereDrone:
+                return SphereDrone();
+            case EnemyType::CubeTurret:
+                return CubeTurret();
+            case EnemyType::PyramidCharger:
+            default:
+                return PyramidCharger();
+            }
+        }
+
+        EnemyType pick_enemy_type(const EnemySpawnWeights & weights)
+        {
+            std::array<std::pair<EnemyType, float>, 4> weightedTypes =
+            {{
+                { EnemyType::CylinderBot,    weights.cylinderBot },
+                { EnemyType::SphereDrone,    weights.sphereDrone },
+                { EnemyType::CubeTurret,     weights.cubeTurret },
+                { EnemyType::PyramidCharger, weights.pyramidCharger }
+            }};
+
+            float totalWeight = std::accumulate(weightedTypes.begin(), weightedTypes.end(), 0.0f,
+                [](float acc, const auto & entry) { return acc + std::max(entry.second, 0.0f); });
+
+            if (totalWeight <= 0.0f)
+                return EnemyType::CylinderBot;
+
+            float roll = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+            float target = roll * totalWeight;
+
+            float accumulated = 0.0f;
+            for (const auto & entry : weightedTypes)
+            {
+                accumulated += std::max(entry.second, 0.0f);
+                if (target <= accumulated)
+                    return entry.first;
+            }
+
+            return weightedTypes.back().first;
+        }
     }
 
     void Enemy::update(float dt, const glm::vec3 & playerPos, const Maze & maze)
@@ -146,5 +202,71 @@ namespace game
         default:
             break;
         }
+    }
+
+    std::vector<Enemy> & active_enemies()
+    {
+        static std::vector<Enemy> enemies;
+        return enemies;
+    }
+
+    void spawn_enemies(const Maze & maze,
+                       float tileScale,
+                       const glm::ivec2 & playerStartCell,
+                       const EnemySpawnWeights & weights)
+    {
+        auto & enemies = active_enemies();
+        enemies.clear();
+
+        std::vector<glm::ivec2> openTiles;
+        openTiles.reserve(maze.tiles_n * maze.tiles_n);
+
+        int playerTileR = playerStartCell.x * 2 + 1;
+        int playerTileC = playerStartCell.y * 2 + 1;
+
+        for (int tr = 0; tr < maze.tiles_n; ++tr)
+        {
+            for (int tc = 0; tc < maze.tiles_n; ++tc)
+            {
+                if (maze.is_wall_tile(tr, tc))
+                    continue;
+
+                if (tr == playerTileR && tc == playerTileC)
+                    continue;
+
+                openTiles.emplace_back(tr, tc);
+            }
+        }
+
+        int totalTiles = maze.tiles_n * maze.tiles_n;
+        int openTilesCount = static_cast<int>(openTiles.size());
+        int spawnCount = std::max(0, totalTiles - openTilesCount);
+        spawnCount = std::min(spawnCount, openTilesCount);
+
+        for (int i = 0; i < spawnCount && !openTiles.empty(); ++i)
+        {
+            int choice = std::rand() % openTiles.size();
+            glm::ivec2 tile = openTiles[choice];
+            openTiles.erase(openTiles.begin() + choice);
+
+            Enemy enemy = make_enemy(pick_enemy_type(weights));
+            enemy.pos = glm::vec3((static_cast<float>(tile.y) + TILE_OFFSET) * tileScale,
+                                  0.0f,
+                                  (static_cast<float>(tile.x) + TILE_OFFSET) * tileScale);
+            enemies.push_back(enemy);
+        }
+    }
+
+    void update_enemies(float dt, const glm::vec3 & playerPos, const Maze & maze)
+    {
+        auto & enemies = active_enemies();
+        for (auto & enemy : enemies)
+            enemy.update(dt, playerPos, maze);
+    }
+
+    void draw_enemies(const std::vector<Enemy> & enemies)
+    {
+        for (const auto & enemy : enemies)
+            enemy.draw();
     }
 }

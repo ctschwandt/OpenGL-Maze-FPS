@@ -1,6 +1,12 @@
 #ifndef ENEMY_H
 #define ENEMY_H
 
+#include <array>
+#include <vector>
+
+#include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+
 #include "Actor.h"
 
 class Maze;
@@ -34,6 +40,14 @@ namespace game
         float detectionRange_ = 0.0f;
     };
 
+    struct EnemySpawnWeights
+    {
+        float cylinderBot     = 1.0f;
+        float sphereDrone     = 1.0f;
+        float cubeTurret      = 1.0f;
+        float pyramidCharger  = 1.0f;
+    };
+
     class CylinderBot : public Enemy
     {
     public:
@@ -57,6 +71,14 @@ namespace game
     public:
         PyramidCharger();
     };
+
+    std::vector<Enemy> & active_enemies();
+    void spawn_enemies(const Maze & maze,
+                       float tileScale,
+                       const glm::ivec2 & playerStartCell,
+                       const EnemySpawnWeights & weights);
+    void update_enemies(float dt, const glm::vec3 & playerPos, const Maze & maze);
+    void draw_enemies(const std::vector<Enemy> & enemies);
 }
 
 #endif // ENEMY_H
