@@ -116,9 +116,14 @@ namespace game
         {
             constexpr float GROUND_Y   = 0.0f;
             constexpr float TILE_SCALE = 15.0f;
+            constexpr float AGGRESSIVE_RANGE = 6.0f;
 
             // CylinderBot stays on the ground plane.
             pos.y = GROUND_Y;
+
+            glm::vec3 toPlayer = playerPos - pos;
+            toPlayer.y         = 0.0f;
+            float distanceToPlayer = glm::length(toPlayer);
 
             int curTr    = static_cast<int>(std::floor(pos.z / TILE_SCALE));
             int curTc    = static_cast<int>(std::floor(pos.x / TILE_SCALE));
@@ -126,49 +131,64 @@ namespace game
             int playerTc = static_cast<int>(std::floor(playerPos.x / TILE_SCALE));
             glm::ivec2 playerTile(playerTr, playerTc);
 
-            bool reachedTargetTile = (glm::ivec2(curTr, curTc) == targetTile_);
-            if (path_.empty() || playerTile != lastPlayerTile_ || reachedTargetTile)
+            if (distanceToPlayer < AGGRESSIVE_RANGE)
             {
-                std::vector<glm::ivec2> newPath;
-                if (maze.findPath(curTr, curTc, playerTr, playerTc, newPath))
+                path_.clear();
+                pathIndex_      = 0;
+                lastPlayerTile_ = { -1, -1 };
+
+                glm::vec3 dir = toPlayer;
+                if (glm::length2(dir) > 0.0001f)
+                    dir = glm::normalize(dir);
+
+                vel = dir * moveSpeed_;
+            }
+            else
+            {
+                bool reachedTargetTile = (glm::ivec2(curTr, curTc) == targetTile_);
+                if (path_.empty() || playerTile != lastPlayerTile_ || reachedTargetTile)
                 {
-                    path_           = newPath;
-                    lastPlayerTile_ = playerTile;
-                    if (path_.size() > 1)
+                    std::vector<glm::ivec2> newPath;
+                    if (maze.findPath(curTr, curTc, playerTr, playerTc, newPath))
                     {
-                        pathIndex_  = 1;
-                        targetTile_ = path_[pathIndex_];
+                        path_           = newPath;
+                        lastPlayerTile_ = playerTile;
+                        if (path_.size() > 1)
+                        {
+                            pathIndex_  = 1;
+                            targetTile_ = path_[pathIndex_];
+                        }
+                        else
+                        {
+                            pathIndex_  = 0;
+                            targetTile_ = playerTile;
+                        }
                     }
                     else
                     {
-                        pathIndex_  = 0;
-                        targetTile_ = playerTile;
+                        // Without a valid path, fall back to staying put instead of
+                        // marching straight toward the player (which can ignore
+                        // walls). Keep attempting to find a path on subsequent
+                        // updates.
+                        path_.clear();
+                        pathIndex_      = 0;
+                        targetTile_     = { curTr, curTc };
+                        lastPlayerTile_ = { -1, -1 };
+                        vel             = glm::vec3(0.0f);
+                        return;
                     }
                 }
-                else
-                {
-                    // Without a valid path, fall back to staying put instead of
-                    // marching straight toward the player (which can ignore
-                    // walls). Keep attempting to find a path on subsequent
-                    // updates.
-                    path_.clear();
-                    pathIndex_      = 0;
-                    targetTile_     = { curTr, curTc };
-                    lastPlayerTile_ = { -1, -1 };
-                    vel             = glm::vec3(0.0f);
-                    return;
-                }
+
+                float targetCenterX = (static_cast<float>(targetTile_.y) + 0.5f) * TILE_SCALE;
+                float targetCenterZ = (static_cast<float>(targetTile_.x) + 0.5f) * TILE_SCALE;
+                glm::vec3 targetPos(targetCenterX, GROUND_Y, targetCenterZ);
+                glm::vec3 dir       = targetPos - pos;
+                dir.y               = 0.0f;
+                if (glm::length2(dir) > 0.0001f)
+                    dir = glm::normalize(dir);
+
+                vel = dir * moveSpeed_;
             }
-
-            float targetCenterX = (static_cast<float>(targetTile_.y) + 0.5f) * TILE_SCALE;
-            float targetCenterZ = (static_cast<float>(targetTile_.x) + 0.5f) * TILE_SCALE;
-            glm::vec3 targetPos(targetCenterX, GROUND_Y, targetCenterZ);
-            glm::vec3 dir       = targetPos - pos;
-            dir.y               = 0.0f;
-            if (glm::length2(dir) > 0.0001f)
-                dir = glm::normalize(dir);
-
-            vel = dir * moveSpeed_;
 
             auto collides_with_wall = [&](float worldX, float worldZ, float collisionRadius) -> bool
             {
