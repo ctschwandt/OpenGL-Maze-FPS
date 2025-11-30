@@ -126,13 +126,52 @@ namespace game
 
             if (dist > detectionRange_)
             {
-                // Simple damping when player is out of range
                 vel.x *= 0.9f;
                 vel.z *= 0.9f;
+                path_.clear();
+                lastPlayerTile_ = { -1, -1 };
                 return;
             }
 
-            glm::vec3 dir(playerPos.x - pos.x, 0.0f, playerPos.z - pos.z);
+            int curTr    = static_cast<int>(std::floor(pos.z / TILE_SCALE));
+            int curTc    = static_cast<int>(std::floor(pos.x / TILE_SCALE));
+            int playerTr = static_cast<int>(std::floor(playerPos.z / TILE_SCALE));
+            int playerTc = static_cast<int>(std::floor(playerPos.x / TILE_SCALE));
+            glm::ivec2 playerTile(playerTr, playerTc);
+
+            bool reachedTargetTile = (glm::ivec2(curTr, curTc) == targetTile_);
+            if (path_.empty() || playerTile != lastPlayerTile_ || reachedTargetTile)
+            {
+                std::vector<glm::ivec2> newPath;
+                if (maze.findPath(curTr, curTc, playerTr, playerTc, newPath))
+                {
+                    path_           = newPath;
+                    lastPlayerTile_ = playerTile;
+                    if (path_.size() > 1)
+                    {
+                        pathIndex_  = 1;
+                        targetTile_ = path_[pathIndex_];
+                    }
+                    else
+                    {
+                        pathIndex_  = 0;
+                        targetTile_ = playerTile;
+                    }
+                }
+                else
+                {
+                    path_.clear();
+                    pathIndex_      = 0;
+                    targetTile_     = playerTile;
+                    lastPlayerTile_ = playerTile;
+                }
+            }
+
+            float targetCenterX = (static_cast<float>(targetTile_.y) + 0.5f) * TILE_SCALE;
+            float targetCenterZ = (static_cast<float>(targetTile_.x) + 0.5f) * TILE_SCALE;
+            glm::vec3 targetPos(targetCenterX, GROUND_Y, targetCenterZ);
+            glm::vec3 dir       = targetPos - pos;
+            dir.y               = 0.0f;
             if (glm::length2(dir) > 0.0001f)
                 dir = glm::normalize(dir);
 

@@ -11,6 +11,7 @@
 #include <ctime>
 #include <stdexcept>
 #include <cstdint>
+#include <glm/vec2.hpp>
 
 // directions North, East, South, West
 enum DIR
@@ -84,6 +85,8 @@ public:
 
     // Fast lookup using precomputed grid
     bool   is_wall_tile(int tr, int tc) const;
+    bool   findPath(int startTr, int startTc, int goalTr, int goalTc,
+                    std::vector<glm::ivec2> & outPath) const;
 
     // member variables //
     std::vector<Cell>   cells;
