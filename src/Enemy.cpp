@@ -16,37 +16,36 @@
 
 namespace game
 {
-    Enemy::Enemy(EnemyType type, float moveSpeed, float detectionRange, int baseHealth)
+    Enemy::Enemy(EnemyType type, float moveSpeed, int baseHealth)
         : type_(type)
     {
         moveSpeed_      = moveSpeed;
-        detectionRange_ = 9999.0f; // detectionRange;
         health          = baseHealth;
     }
 
     CylinderBot::CylinderBot()
-        : Enemy(EnemyType::CylinderBot, 6.0f, 12.0f, 80)
+        : Enemy(EnemyType::CylinderBot, 6.0f, 80)
     {
         radius = 0.6f;
         height = 1.6f;
     }
 
     SphereDrone::SphereDrone()
-        : Enemy(EnemyType::SphereDrone, 8.0f, 15.0f, 60)
+        : Enemy(EnemyType::SphereDrone, 8.0f, 60)
     {
         radius = 0.7f;
         height = 1.0f;
     }
 
     CubeTurret::CubeTurret()
-        : Enemy(EnemyType::CubeTurret, 0.0f, 20.0f, 120)
+        : Enemy(EnemyType::CubeTurret, 0.0f, 120)
     {
         radius = 0.9f;
         height = 1.2f;
     }
 
     PyramidCharger::PyramidCharger()
-        : Enemy(EnemyType::PyramidCharger, 10.0f, 10.0f, 90)
+        : Enemy(EnemyType::PyramidCharger, 10.0f, 90)
     {
         radius = 0.8f;
         height = 1.4f;
@@ -121,18 +120,6 @@ namespace game
             // CylinderBot stays on the ground plane.
             pos.y = GROUND_Y;
 
-            glm::vec2 dz(playerPos.x - pos.x, playerPos.z - pos.z);
-            float dist = glm::length(dz);
-
-            if (dist > detectionRange_)
-            {
-                vel.x *= 0.9f;
-                vel.z *= 0.9f;
-                path_.clear();
-                lastPlayerTile_ = { -1, -1 };
-                return;
-            }
-
             int curTr    = static_cast<int>(std::floor(pos.z / TILE_SCALE));
             int curTc    = static_cast<int>(std::floor(pos.x / TILE_SCALE));
             int playerTr = static_cast<int>(std::floor(playerPos.z / TILE_SCALE));
@@ -160,10 +147,16 @@ namespace game
                 }
                 else
                 {
+                    // Without a valid path, fall back to staying put instead of
+                    // marching straight toward the player (which can ignore
+                    // walls). Keep attempting to find a path on subsequent
+                    // updates.
                     path_.clear();
                     pathIndex_      = 0;
-                    targetTile_     = playerTile;
-                    lastPlayerTile_ = playerTile;
+                    targetTile_     = { curTr, curTc };
+                    lastPlayerTile_ = { -1, -1 };
+                    vel             = glm::vec3(0.0f);
+                    return;
                 }
             }
 

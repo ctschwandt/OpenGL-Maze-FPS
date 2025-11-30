@@ -24,12 +24,11 @@ namespace game
     class Enemy : public Actor
     {
     public:
-        Enemy(EnemyType type, float moveSpeed, float detectionRange, int baseHealth);
+        Enemy(EnemyType type, float moveSpeed, int baseHealth);
         virtual ~Enemy() = default;
 
         EnemyType type() const { return type_; }
         float move_speed() const { return moveSpeed_; }
-        float detection_range() const { return detectionRange_; }
 
         virtual void update(float dt, const glm::vec3 & playerPos, const Maze & maze);
         virtual void draw() const;
@@ -37,7 +36,6 @@ namespace game
     protected:
         EnemyType type_;
         float moveSpeed_ = 0.0f;
-        float detectionRange_ = 0.0f;
         std::vector<glm::ivec2> path_;
         glm::ivec2 lastPlayerTile_{ -1, -1 };
         glm::ivec2 targetTile_{ 0, 0 };
