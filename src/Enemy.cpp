@@ -19,9 +19,9 @@ namespace game
     Enemy::Enemy(EnemyType type, float moveSpeed, float detectionRange, int baseHealth)
         : type_(type)
     {
-        moveSpeed_ = moveSpeed;
+        moveSpeed_      = moveSpeed;
         detectionRange_ = detectionRange;
-        health = baseHealth;
+        health          = baseHealth;
     }
 
     CylinderBot::CylinderBot()
@@ -54,7 +54,8 @@ namespace game
 
     namespace
     {
-        constexpr float TILE_OFFSET = 0.5f;
+        constexpr float TILE_OFFSET      = 0.5f;
+        constexpr float ENEMY_ROOM_RATIO = 1.0f; // 1 enemy per open tile (total), excluding player tile
 
         Enemy make_enemy(EnemyType type)
         {
@@ -74,6 +75,7 @@ namespace game
 
         EnemyType pick_enemy_type(const EnemySpawnWeights & weights)
         {
+            return EnemyType::CylinderBot;
             std::array<std::pair<EnemyType, float>, 4> weightedTypes =
             {{
                 { EnemyType::CylinderBot,    weights.cylinderBot },
@@ -82,13 +84,17 @@ namespace game
                 { EnemyType::PyramidCharger, weights.pyramidCharger }
             }};
 
-            float totalWeight = std::accumulate(weightedTypes.begin(), weightedTypes.end(), 0.0f,
-                [](float acc, const auto & entry) { return acc + std::max(entry.second, 0.0f); });
+            float totalWeight = std::accumulate(
+                weightedTypes.begin(), weightedTypes.end(), 0.0f,
+                [](float acc, const auto & entry)
+                {
+                    return acc + std::max(entry.second, 0.0f);
+                });
 
             if (totalWeight <= 0.0f)
                 return EnemyType::CylinderBot;
 
-            float roll = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+            float roll   = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
             float target = roll * totalWeight;
 
             float accumulated = 0.0f;
@@ -101,7 +107,7 @@ namespace game
 
             return weightedTypes.back().first;
         }
-    }
+    } // anonymous namespace
 
     void Enemy::update(float dt, const glm::vec3 & playerPos, const Maze & maze)
     {
@@ -120,6 +126,7 @@ namespace game
 
             if (dist > detectionRange_)
             {
+                // Simple damping when player is out of range
                 vel.x *= 0.9f;
                 vel.z *= 0.9f;
                 return;
@@ -175,6 +182,7 @@ namespace game
         case EnemyType::CubeTurret:
         case EnemyType::PyramidCharger:
         default:
+            // TODO: implement behavior for other enemy types
             break;
         }
     }
@@ -200,6 +208,7 @@ namespace game
         case EnemyType::CubeTurret:
         case EnemyType::PyramidCharger:
         default:
+            // TODO: draw other enemy types
             break;
         }
     }
@@ -212,47 +221,60 @@ namespace game
 
     void spawn_enemies(const Maze & maze,
                        float tileScale,
-                       const glm::ivec2 & playerStartCell,
+                       const glm::ivec2 & playerStartCell, // (room_r, room_c) in logical maze coords
                        const EnemySpawnWeights & weights)
-    {
+    {    
         auto & enemies = active_enemies();
         enemies.clear();
 
+        const int tileN = maze.tiles_n;      // = 2 * n + 1
+        const int n     = maze.n;
+
+        // Convert player logical cell -> tile indices
+        const int playerTileR = playerStartCell.x * 2 + 1;
+        const int playerTileC = playerStartCell.y * 2 + 1;
+
+        // Collect all open tiles (non-wall) except the player's tile.
         std::vector<glm::ivec2> openTiles;
-        openTiles.reserve(maze.tiles_n * maze.tiles_n);
+        openTiles.reserve(tileN * tileN);
 
-        int playerTileR = playerStartCell.x * 2 + 1;
-        int playerTileC = playerStartCell.y * 2 + 1;
-
-        for (int tr = 0; tr < maze.tiles_n; ++tr)
+        for (int tr = 0; tr < tileN; ++tr)
         {
-            for (int tc = 0; tc < maze.tiles_n; ++tc)
+            for (int tc = 0; tc < tileN; ++tc)
             {
                 if (maze.is_wall_tile(tr, tc))
                     continue;
 
                 if (tr == playerTileR && tc == playerTileC)
-                    continue;
+                    continue; // don't spawn on the player
 
                 openTiles.emplace_back(tr, tc);
             }
         }
 
-        int totalTiles = maze.tiles_n * maze.tiles_n;
-        int openTilesCount = static_cast<int>(openTiles.size());
-        int spawnCount = std::max(0, totalTiles - openTilesCount);
-        spawnCount = std::min(spawnCount, openTilesCount);
+        if (openTiles.empty())
+            return;
 
-        for (int i = 0; i < spawnCount && !openTiles.empty(); ++i)
+        int openCount  = static_cast<int>(openTiles.size());
+        int spawnCount = static_cast<int>(openCount * ENEMY_ROOM_RATIO);
+
+        //std::cout << spawnCount << std::endl;
+        
+        for (int i = 0; i < spawnCount; ++i)
         {
+            // Pick a random open tile WITH replacement.
             int choice = std::rand() % openTiles.size();
-            glm::ivec2 tile = openTiles[choice];
-            openTiles.erase(openTiles.begin() + choice);
+            glm::ivec2 tile = openTiles[choice]; // (tr, tc)
 
             Enemy enemy = make_enemy(pick_enemy_type(weights));
-            enemy.pos = glm::vec3((static_cast<float>(tile.y) + TILE_OFFSET) * tileScale,
-                                  0.0f,
-                                  (static_cast<float>(tile.x) + TILE_OFFSET) * tileScale);
+
+            // Center of that tile in world space.
+            enemy.pos = glm::vec3(
+                (static_cast<float>(tile.y) + TILE_OFFSET) * tileScale, // x
+                0.0f,                                                   // y
+                (static_cast<float>(tile.x) + TILE_OFFSET) * tileScale  // z
+            );
+
             enemies.push_back(enemy);
         }
     }
