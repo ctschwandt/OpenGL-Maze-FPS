@@ -20,7 +20,7 @@ namespace game
         : type_(type)
     {
         moveSpeed_      = moveSpeed;
-        detectionRange_ = detectionRange;
+        detectionRange_ = 9999.0f; // detectionRange;
         health          = baseHealth;
     }
 
