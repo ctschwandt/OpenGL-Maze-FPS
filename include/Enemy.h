@@ -38,6 +38,10 @@ namespace game
         EnemyType type_;
         float moveSpeed_ = 0.0f;
         float detectionRange_ = 0.0f;
+        std::vector<glm::ivec2> path_;
+        glm::ivec2 lastPlayerTile_{ -1, -1 };
+        glm::ivec2 targetTile_{ 0, 0 };
+        std::size_t pathIndex_ = 0;
     };
 
     struct EnemySpawnWeights

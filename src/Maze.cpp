@@ -2,6 +2,11 @@
 
 #include "Maze.h"
 
+#include <algorithm>
+#include <climits>
+#include <queue>
+#include <vector>
+
 bool verbose = false;
 
 //======================================================================
@@ -374,6 +379,117 @@ bool Maze::is_wall_tile(int tr, int tc) const
     }
 
     return wall_tiles[tr * tiles_n + tc] != 0;
+}
+
+bool Maze::findPath(int startTr, int startTc, int goalTr, int goalTc,
+                    std::vector<glm::ivec2> & outPath) const
+{
+    outPath.clear();
+    int tileN = tiles_n;
+
+    if (startTr < 0 || startTr >= tileN || startTc < 0 || startTc >= tileN ||
+        goalTr  < 0 || goalTr  >= tileN || goalTc  < 0 || goalTc  >= tileN)
+        return false;
+
+    if (is_wall_tile(startTr, startTc) || is_wall_tile(goalTr, goalTc))
+        return false;
+
+    if (startTr == goalTr && startTc == goalTc)
+    {
+        outPath.emplace_back(startTr, startTc);
+        return true;
+    }
+
+    int totalTiles = tileN * tileN;
+    std::vector<int>  gScore(totalTiles, INT_MAX);
+    std::vector<int>  parent(totalTiles, -1);
+    std::vector<bool> closed(totalTiles, false);
+
+    auto indexOf  = [&](int r, int c) { return r * tileN + c; };
+    auto coordsOf = [&](int idx) { return std::pair<int, int>(idx / tileN, idx % tileN); };
+
+    int startIdx = indexOf(startTr, startTc);
+    int goalIdx  = indexOf(goalTr, goalTc);
+    gScore[startIdx] = 0;
+
+    struct Node
+    {
+        int idx;
+        int f;
+    };
+
+    struct CompareNode
+    {
+        bool operator()(const Node & a, const Node & b) const { return a.f > b.f; }
+    };
+
+    std::priority_queue<Node, std::vector<Node>, CompareNode> openSet;
+
+    int initialH = std::abs(goalTr - startTr) + std::abs(goalTc - startTc);
+    openSet.push({ startIdx, initialH });
+
+    const int DIRS[4][2] = { { 1, 0 }, { -1, 0 }, { 0, 1 }, { 0, -1 } };
+    bool found           = false;
+
+    while (!openSet.empty())
+    {
+        Node current = openSet.top();
+        openSet.pop();
+        int curIdx = current.idx;
+
+        if (closed[curIdx])
+            continue;
+
+        closed[curIdx] = true;
+        if (curIdx == goalIdx)
+        {
+            found = true;
+            break;
+        }
+
+        int cr = curIdx / tileN;
+        int cc = curIdx % tileN;
+
+        for (auto & d : DIRS)
+        {
+            int nr = cr + d[0];
+            int nc = cc + d[1];
+            if (nr < 0 || nr >= tileN || nc < 0 || nc >= tileN)
+                continue;
+
+            if (is_wall_tile(nr, nc))
+                continue;
+
+            int neighborIdx = indexOf(nr, nc);
+            if (closed[neighborIdx])
+                continue;
+
+            int newG = gScore[curIdx] + 1;
+            if (newG < gScore[neighborIdx])
+            {
+                gScore[neighborIdx] = newG;
+                parent[neighborIdx] = curIdx;
+                int h               = std::abs(goalTr - nr) + std::abs(goalTc - nc);
+                openSet.push({ neighborIdx, newG + h });
+            }
+        }
+    }
+
+    if (!found)
+        return false;
+
+    std::vector<glm::ivec2> reversePath;
+    for (int idx = goalIdx; idx != -1; idx = parent[idx])
+    {
+        auto [r, c] = coordsOf(idx);
+        reversePath.emplace_back(r, c);
+        if (idx == startIdx)
+            break;
+    }
+
+    std::reverse(reversePath.begin(), reversePath.end());
+    outPath.swap(reversePath);
+    return true;
 }
 
 //======================================================================
