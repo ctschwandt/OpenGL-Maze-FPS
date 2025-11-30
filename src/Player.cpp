@@ -17,6 +17,7 @@ namespace
 {
     constexpr glm::vec3 WORLD_UP(0.0f, 1.0f, 0.0f);
     constexpr float PROJECTILE_SPEED = 80.0f;
+    constexpr int PROJECTILE_DAMAGE = 20;
 
     glm::vec3 forward_from_angles(float yaw, float pitch)
     {
@@ -106,6 +107,7 @@ namespace
         game::Projectile shot;
         shot.position = eyePosition + dir * (game::PLAYER_EYE_RADIUS * 0.5f);
         shot.velocity = dir * PROJECTILE_SPEED;
+        shot.damage   = PROJECTILE_DAMAGE;
 
         game::active_projectiles().push_back(shot);
         state.fireCooldown = state.fireRate;
