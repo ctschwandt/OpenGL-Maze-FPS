@@ -23,8 +23,10 @@
 #include "mygllib/Light.h"
 #include "myglm.h"
 #include "Draw.h"
+#include "Enemy.h"
 #include "Player.h"
 #include "Projectile.h"
+#include <glm/vec2.hpp>
 
 //==============================================================
 // Globals
@@ -35,6 +37,7 @@ const float TOP_DOWN_ZOOM_STEP = 0.1f;
 const float TOP_DOWN_ZOOM_MIN  = 0.1f;
 const float TOP_DOWN_ZOOM_MAX  = 2.0f;
 float top_down_zoom = 0.2f;
+const game::EnemySpawnWeights ENEMY_SPAWN_WEIGHTS{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 //==============================================================
 // Lighting
@@ -306,6 +309,7 @@ void display()
     glPopMatrix();
 
     draw_player_avatar(game::player_movement_state());
+    game::draw_enemies(game::active_enemies());
     draw_projectiles(game::active_projectiles());
 
 }
@@ -322,6 +326,7 @@ int main(int argc, char ** argv)
     // ----- Maze generation (text debug) -----
     int start_r = std::rand() % maze.n;
     int start_c = std::rand() % maze.n;
+    glm::ivec2 playerStartCell(start_r, start_c);
     maze.init(start_r, start_c);
     maze.print();
     std::cout << std::endl;
@@ -365,6 +370,8 @@ int main(int argc, char ** argv)
 
     init();
 
+    game::spawn_enemies(maze, TILE_SCALE, playerStartCell, ENEMY_SPAWN_WEIGHTS);
+
     // ----- Input wrapper (sets cursor disabled + callback inside ctor) -----
     mygllib::GLFWInput input(window);
 
@@ -393,6 +400,7 @@ int main(int argc, char ** argv)
         mygllib::Mouse::update_from_input(input);
         mygllib::Keyboard::update_from_input(input, dt);
         game::update_player_movement(input, dt, view, maze, TILE_SCALE);
+        game::update_enemies(dt, game::player_movement_state().position, maze);
         game::update_projectiles(dt, maze, TILE_SCALE);
 
         if (globals::top_down_view)
