@@ -15,7 +15,7 @@ namespace game
 {
     enum class EnemyType
     {
-        RectBot,
+        CylinderBot,
         SphereDrone,
         CubeTurret,
         PyramidCharger
@@ -52,16 +52,16 @@ namespace game
 
     struct EnemySpawnWeights
     {
-        float rectBot         = 1.0f;
+        float cylinderBot     = 1.0f;
         float sphereDrone     = 1.0f;
         float cubeTurret      = 1.0f;
         float pyramidCharger  = 1.0f;
     };
 
-    class RectBot : public Enemy
+    class CylinderBot : public Enemy
     {
     public:
-        RectBot();
+        CylinderBot();
     };
 
     class SphereDrone : public Enemy
