@@ -30,6 +30,9 @@ namespace game
         EnemyType type() const { return type_; }
         float move_speed() const { return moveSpeed_; }
 
+        glm::vec3 previous_position() const { return prevPos; }
+        void set_previous_position(const glm::vec3 & pos) { prevPos = pos; }
+
         virtual void update(float dt, const glm::vec3 & playerPos, const Maze & maze);
         virtual void draw() const;
 

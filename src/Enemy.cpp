@@ -339,7 +339,6 @@ namespace game
         enemies.clear();
 
         const int tileN = maze.tiles_n;      // = 2 * n + 1
-        const int n     = maze.n;
 
         // Convert player logical cell -> tile indices
         const int playerTileR = playerStartCell.x * 2 + 1;
@@ -394,7 +393,7 @@ namespace game
     {
         auto & enemies = active_enemies();
         for (auto & enemy : enemies)
-            enemy.prevPos = enemy.pos;
+            enemy.set_previous_position(enemy.pos);
 
         for (auto & enemy : enemies)
             enemy.update(dt, playerPos, maze);
@@ -405,7 +404,7 @@ namespace game
         {
             if (collides_with_wall(enemy.pos.x, enemy.pos.z, enemy.radius, maze))
             {
-                enemy.pos = enemy.prevPos;
+                enemy.pos = enemy.previous_position();
                 enemy.vel = glm::vec3(0.0f);
             }
         }
