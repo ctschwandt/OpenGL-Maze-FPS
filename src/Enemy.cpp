@@ -23,12 +23,12 @@ namespace game
         health          = baseHealth;
     }
 
-    RectBot::RectBot()
-        : Enemy(EnemyType::RectBot, 14.0f, 80)
+    CylinderBot::CylinderBot()
+        : Enemy(EnemyType::CylinderBot, 14.0f, 80)
     {
-        radius = 0.5f;
+        radius = 0.8f;
         height = 2.4f;
-        set_collision_size(0.9f, 0.6f);
+        set_collision_size(radius, radius);
     }
 
     SphereDrone::SphereDrone()
@@ -64,8 +64,8 @@ namespace game
         {
             switch (type)
             {
-            case EnemyType::RectBot:
-                return RectBot();
+            case EnemyType::CylinderBot:
+                return CylinderBot();
             case EnemyType::SphereDrone:
                 return SphereDrone();
             case EnemyType::CubeTurret:
@@ -78,10 +78,10 @@ namespace game
 
         EnemyType pick_enemy_type(const EnemySpawnWeights & weights)
         {
-            return EnemyType::RectBot;
+            return EnemyType::CylinderBot;
             std::array<std::pair<EnemyType, float>, 4> weightedTypes =
             {{
-                { EnemyType::RectBot,        weights.rectBot },
+                { EnemyType::CylinderBot,    weights.cylinderBot },
                 { EnemyType::SphereDrone,    weights.sphereDrone },
                 { EnemyType::CubeTurret,     weights.cubeTurret },
                 { EnemyType::PyramidCharger, weights.pyramidCharger }
@@ -95,7 +95,7 @@ namespace game
                 });
 
             if (totalWeight <= 0.0f)
-                return EnemyType::RectBot;
+                return EnemyType::CylinderBot;
 
             float roll   = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
             float target = roll * totalWeight;
@@ -116,13 +116,13 @@ namespace game
     {
         switch (type_)
         {
-        case EnemyType::RectBot:
+        case EnemyType::CylinderBot:
         {
             constexpr float GROUND_Y   = 0.0f;
             constexpr float TILE_SCALE = 15.0f;
             constexpr float AGGRESSIVE_RANGE = TILE_SCALE;
 
-            // RectBot stays on the ground plane.
+            // CylinderBot stays on the ground plane.
             pos.y = GROUND_Y;
 
             glm::vec3 toPlayer = playerPos - pos;
@@ -247,7 +247,7 @@ namespace game
     {
         switch (type_)
         {
-        case EnemyType::RectBot:
+        case EnemyType::CylinderBot:
         {
             glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT);
             glDisable(GL_LIGHTING);
@@ -257,7 +257,7 @@ namespace game
             glRotatef(yaw * 180.0f / static_cast<float>(M_PI), 0.0f, 1.0f, 0.0f);
 
             glColor3f(0.2f, 0.6f, 1.0f);
-            draw_box(collisionHalfWidth_ * 2.0f, height, collisionHalfDepth_ * 2.0f);
+            draw_cylinder(radius, height, 24);
 
             glPopMatrix();
 
