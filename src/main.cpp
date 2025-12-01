@@ -27,6 +27,8 @@
 #include "Player.h"
 #include "Projectile.h"
 #include <glm/vec2.hpp>
+#include <glm/vec3.hpp>
+#include <glm/gtx/norm.hpp>
 
 //==============================================================
 // Globals
@@ -176,6 +178,42 @@ void draw_player_avatar(const game::PlayerMovement & playerState)
     glPopMatrix();
 }
 
+void draw_player_direction_indicator(const game::PlayerMovement & playerState)
+{
+    glm::vec3 dir(playerState.facingDirection.x, 0.0f, playerState.facingDirection.z);
+    if (glm::length2(dir) == 0.0f)
+        dir = glm::vec3(0.0f, 0.0f, -1.0f);
+
+    dir = glm::normalize(dir);
+    glm::vec3 perp(-dir.z, 0.0f, dir.x);
+    float perpLen2 = glm::length2(perp);
+    if (perpLen2 > 0.0f)
+        perp /= std::sqrt(perpLen2);
+    else
+        perp = glm::vec3(1.0f, 0.0f, 0.0f);
+
+    const float arrowLength   = game::PLAYER_RADIUS * 2.0f;
+    const float arrowHalfW    = arrowLength * 0.35f;
+    const float arrowBackDist = arrowLength * 0.35f;
+    const float arrowHeight   = playerState.groundHeight + 0.05f;
+
+    glm::vec3 tip        = playerState.position + dir * arrowLength;
+    glm::vec3 baseCenter = playerState.position - dir * arrowBackDist;
+    glm::vec3 baseLeft   = baseCenter - perp * arrowHalfW;
+    glm::vec3 baseRight  = baseCenter + perp * arrowHalfW;
+
+    glPushAttrib(GL_LIGHTING_BIT);
+    glDisable(GL_LIGHTING);
+    glColor3f(0.1f, 0.1f, 0.1f);
+    glBegin(GL_TRIANGLES);
+    glNormal3f(0.0f, 1.0f, 0.0f);
+    glVertex3f(tip.x, arrowHeight, tip.z);
+    glVertex3f(baseLeft.x, arrowHeight, baseLeft.z);
+    glVertex3f(baseRight.x, arrowHeight, baseRight.z);
+    glEnd();
+    glPopAttrib();
+}
+
 void draw_projectiles(const std::vector<game::Projectile> & projectiles)
 {
     const float radius = 0.2f;
@@ -309,6 +347,8 @@ void display()
     glPopMatrix();
 
     draw_player_avatar(game::player_movement_state());
+    if (globals::top_down_view)
+        draw_player_direction_indicator(game::player_movement_state());
     game::draw_enemies(game::active_enemies());
     draw_projectiles(game::active_projectiles());
 
