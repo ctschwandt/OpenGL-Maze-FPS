@@ -15,7 +15,7 @@ namespace game
 {
     enum class EnemyType
     {
-        CylinderBot,
+        RectBot,
         SphereDrone,
         CubeTurret,
         PyramidCharger
@@ -36,24 +36,32 @@ namespace game
     protected:
         EnemyType type_;
         float moveSpeed_ = 0.0f;
+        float collisionHalfWidth_ = 0.5f;
+        float collisionHalfDepth_ = 0.5f;
         std::vector<glm::ivec2> path_;
         glm::ivec2 lastPlayerTile_{ -1, -1 };
         glm::ivec2 targetTile_{ 0, 0 };
         std::size_t pathIndex_ = 0;
+
+        void set_collision_size(float halfWidth, float halfDepth)
+        {
+            collisionHalfWidth_ = halfWidth;
+            collisionHalfDepth_ = halfDepth;
+        }
     };
 
     struct EnemySpawnWeights
     {
-        float cylinderBot     = 1.0f;
+        float rectBot         = 1.0f;
         float sphereDrone     = 1.0f;
         float cubeTurret      = 1.0f;
         float pyramidCharger  = 1.0f;
     };
 
-    class CylinderBot : public Enemy
+    class RectBot : public Enemy
     {
     public:
-        CylinderBot();
+        RectBot();
     };
 
     class SphereDrone : public Enemy

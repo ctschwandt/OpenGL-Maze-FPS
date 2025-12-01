@@ -47,4 +47,57 @@ namespace game
         }
         glEnd();
     }
+
+    void draw_box(float width, float height, float depth)
+    {
+        const float hx = width * 0.5f;
+        const float hy = height * 0.5f;
+        const float hz = depth * 0.5f;
+
+        glBegin(GL_QUADS);
+
+        // +X face
+        glNormal3f(1.0f, 0.0f, 0.0f);
+        glVertex3f(hx, -hy, -hz);
+        glVertex3f(hx, -hy, hz);
+        glVertex3f(hx, hy, hz);
+        glVertex3f(hx, hy, -hz);
+
+        // -X face
+        glNormal3f(-1.0f, 0.0f, 0.0f);
+        glVertex3f(-hx, -hy, -hz);
+        glVertex3f(-hx, hy, -hz);
+        glVertex3f(-hx, hy, hz);
+        glVertex3f(-hx, -hy, hz);
+
+        // +Y face
+        glNormal3f(0.0f, 1.0f, 0.0f);
+        glVertex3f(-hx, hy, -hz);
+        glVertex3f(hx, hy, -hz);
+        glVertex3f(hx, hy, hz);
+        glVertex3f(-hx, hy, hz);
+
+        // -Y face
+        glNormal3f(0.0f, -1.0f, 0.0f);
+        glVertex3f(-hx, -hy, -hz);
+        glVertex3f(-hx, -hy, hz);
+        glVertex3f(hx, -hy, hz);
+        glVertex3f(hx, -hy, -hz);
+
+        // +Z face
+        glNormal3f(0.0f, 0.0f, 1.0f);
+        glVertex3f(-hx, -hy, hz);
+        glVertex3f(-hx, hy, hz);
+        glVertex3f(hx, hy, hz);
+        glVertex3f(hx, -hy, hz);
+
+        // -Z face
+        glNormal3f(0.0f, 0.0f, -1.0f);
+        glVertex3f(-hx, -hy, -hz);
+        glVertex3f(hx, -hy, -hz);
+        glVertex3f(hx, hy, -hz);
+        glVertex3f(-hx, hy, -hz);
+
+        glEnd();
+    }
 }
