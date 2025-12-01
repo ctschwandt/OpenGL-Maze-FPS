@@ -26,8 +26,8 @@ namespace game
     RectBot::RectBot()
         : Enemy(EnemyType::RectBot, 14.0f, 80)
     {
-        radius = 0.7f;
-        height = 1.6f;
+        radius = 0.5f;
+        height = 2.4f;
         set_collision_size(0.9f, 0.6f);
     }
 
