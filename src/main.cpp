@@ -27,6 +27,7 @@
 #include "Player.h"
 #include "Projectile.h"
 #include <glm/vec2.hpp>
+#include <glm/geometric.hpp>
 
 //==============================================================
 // Globals
@@ -172,6 +173,38 @@ void draw_player_avatar(const game::PlayerMovement & playerState)
         glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emissive);
         game::draw_cylinder(cylinderRadius, cylinderHeight);
         glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emissiveOff);
+
+        if (globals::top_down_view)
+        {
+            glm::vec3 facing = playerState.facingDirection;
+            facing.y = 0.0f;
+
+            const float facingLength = glm::length(facing);
+            if (facingLength > 0.0001f)
+            {
+                facing /= facingLength;
+
+                const float arrowHeightOffset = cylinderHeight * 0.55f;
+                const float arrowLength = cylinderRadius * 1.2f;
+                const float arrowHalfWidth = cylinderRadius * 0.4f;
+
+                const glm::vec3 center(0.0f, arrowHeightOffset, 0.0f);
+                const glm::vec3 tip = center + (facing * arrowLength);
+                const glm::vec3 side = glm::normalize(glm::cross(facing, glm::vec3(0.0f, 1.0f, 0.0f)));
+                const glm::vec3 baseCenter = center - (facing * (arrowLength * 0.4f));
+                const glm::vec3 baseA = baseCenter + (side * arrowHalfWidth);
+                const glm::vec3 baseB = baseCenter - (side * arrowHalfWidth);
+
+                glDisable(GL_LIGHTING);
+                glColor3f(1.0f, 1.0f, 0.2f);
+                glBegin(GL_TRIANGLES);
+                glVertex3f(tip.x, tip.y, tip.z);
+                glVertex3f(baseA.x, baseA.y, baseA.z);
+                glVertex3f(baseB.x, baseB.y, baseB.z);
+                glEnd();
+                glEnable(GL_LIGHTING);
+            }
+        }
     }
     glPopMatrix();
 }
