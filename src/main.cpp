@@ -36,29 +36,25 @@
 // Globals
 //==============================================================
 Maze maze(5);
-const float TILE_SCALE = 15.0f;
-const float TOP_DOWN_ZOOM_STEP = 0.005f;
-const float TOP_DOWN_ZOOM_MIN  = 0.1f;
-const float TOP_DOWN_ZOOM_MAX  = 2.0f;
-float top_down_zoom = 0.2f;
+const float TILE_SCALE          = 15.0f;
+const float TOP_DOWN_ZOOM_STEP  = 0.005f;
+const float TOP_DOWN_ZOOM_MIN   = 0.1f;
+const float TOP_DOWN_ZOOM_MAX   = 2.0f;
+float       top_down_zoom       = 0.2f;
 const game::EnemySpawnWeights ENEMY_SPAWN_WEIGHTS{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 //==============================================================
-// Lighting
+// Lighting / GL init
 //==============================================================
 //mygllib::Light light;
 
 void init()
 {
-    // gl setup
-    //=============================
     mygllib::View & view = *(mygllib::SingletonView::getInstance());
-
     view.update_center_from_yaw_pitch();
 
-    glClearColor(1, 1, 1, 1);
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glEnable(GL_DEPTH_TEST);
-    //glClearDepth(cfg::CLEAR_DEPTH);
 
     // === enable lighting & color material ===
     glEnable(GL_LIGHTING);
@@ -162,9 +158,6 @@ void draw_maze_columns()
 
 void draw_maze_floor(float maze_span, int tiles_n)
 {
-    glBindTexture(GL_TEXTURE_2D, globals::floor_texture);
-    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
-
     float repeat = static_cast<float>(tiles_n);
 
     glBegin(GL_QUADS);
@@ -179,7 +172,7 @@ void draw_maze_floor(float maze_span, int tiles_n)
 void init_textures()
 {
     globals::floor_texture = load_texture_2d("assets/textures/floor1.jpg");
-    globals::wall_texture  = load_texture_2d("assets/textures/wall1.png");
+    globals::wall_texture  = load_texture_2d("assets/textures/wall1.jpg");
 }
 
 void draw_player_avatar(const game::PlayerMovement & playerState)
@@ -187,7 +180,7 @@ void draw_player_avatar(const game::PlayerMovement & playerState)
     const float cylinderHeight = game::PLAYER_BODY_HEIGHT;
     const float cylinderRadius = game::PLAYER_RADIUS;
 
-    GLfloat emissive[] = {1.0f, 0.1f, 0.8f, 1.0f};
+    GLfloat emissive[]    = {1.0f, 0.1f, 0.8f, 1.0f};
     GLfloat emissiveOff[] = {0.0f, 0.0f, 0.0f, 1.0f};
 
     glPushMatrix();
@@ -337,51 +330,61 @@ void display()
     glLoadIdentity();
     mygllib::SingletonView::getInstance()->lookat();
 
-    //mygllib::Light::all_off();
     glLineWidth(1.0f);
 
     float maze_span = TILE_SCALE * maze.tiles_n;
 
+    // ----- Maze floor (textured, unlit) -----
     if (globals::draw_plane)
     {
+        glPushAttrib(GL_LIGHTING_BIT | GL_ENABLE_BIT);
+
+        glDisable(GL_LIGHTING);
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, globals::floor_texture);
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+        glColor3f(1.0f, 1.0f, 1.0f); // no tint
+
         draw_maze_floor(maze_span, maze.tiles_n);
+
         glBindTexture(GL_TEXTURE_2D, 0);
-        glDisable(GL_TEXTURE_2D);
+        glPopAttrib(); // restores lighting + enable states
     }
+
+    // ----- Axes -----
     if (globals::draw_axes)
     {
-        mygllib::draw_axes(); //500.0f, 2.0f);
+        mygllib::draw_axes();
     }
-    //mygllib::Light::all_on();
-    
-    //light.on();
-    //glEnable(GL_NORMALIZE);
-    //glShadeModel(GL_SMOOTH);
-    //light.set_position();
-    
-    // draw maze columns
-    glColor3f(0.2f, 0.2f, 0.2f);
+
+    // ----- Maze walls (textured, unlit) -----
     glPushMatrix();
     {
         glScalef(TILE_SCALE, TILE_SCALE, TILE_SCALE);
+
+        glPushAttrib(GL_LIGHTING_BIT | GL_ENABLE_BIT);
+
+        glDisable(GL_LIGHTING);
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, globals::wall_texture);
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+        glColor3f(1.0f, 1.0f, 1.0f); // no tint
+
         draw_maze_columns();
+
         glBindTexture(GL_TEXTURE_2D, 0);
-        glDisable(GL_TEXTURE_2D);
+        glPopAttrib(); // restore lighting + enable states
     }
     glPopMatrix();
 
+    // ----- Player, enemies, projectiles (still use lighting setup) -----
     draw_player_avatar(game::player_movement_state());
     if (globals::top_down_view)
         draw_player_direction_indicator(game::player_movement_state());
     game::draw_enemies(game::active_enemies());
     draw_projectiles(game::active_projectiles());
-
 }
 
 //==============================================================
@@ -467,8 +470,7 @@ int main(int argc, char ** argv)
         // 1) Reset deltas for this frame
         input.begin_frame();
 
-        // 2) Pump events; this will trigger the cursor-pos callback,
-        //    which accumulates mouse_delta_x_/y_ inside `input`.
+        // 2) Pump events
         glfwPollEvents();
 
         // 3) Timing
@@ -476,7 +478,7 @@ int main(int argc, char ** argv)
         float dt = static_cast<float>(currentTime - lastTime);
         lastTime = currentTime;
 
-        // 4) Handle input
+        // 4) Handle input & game updates
         handle_function_keys(input);
         mygllib::Mouse::update_from_input(input);
         mygllib::Keyboard::update_from_input(input, dt);

@@ -1,8 +1,10 @@
 // File: src/Texture.cpp
-// Texture loading helpers using stb_image
+// Simple texture loader implemented on top of stb_image,
+// written to resemble the BMP-based example from class.
 
 #include "Texture.h"
 
+#include <iostream>
 #include <stdexcept>
 
 #define STB_IMAGE_IMPLEMENTATION
@@ -12,43 +14,59 @@ GLuint load_texture_2d(const std::string & path, bool flipVertically)
 {
     stbi_set_flip_vertically_on_load(flipVertically ? 1 : 0);
 
-    int width = 0;
+    int width  = 0;
     int height = 0;
-    int channels = 0;
-    unsigned char * data = stbi_load(path.c_str(), &width, &height, &channels, 0);
+    int comp   = 0;
+
+    // Request 3 components (RGB) no matter what the source is.
+    // This avoids "unsupported channel count" issues.
+    unsigned char * data = stbi_load(path.c_str(),
+                                     &width,
+                                     &height,
+                                     &comp,
+                                     3); // force RGB
+
     if (!data)
     {
-        throw std::runtime_error(std::string("Failed to load texture: ") + path +
-                                 " (" + (stbi_failure_reason() ? stbi_failure_reason() : "unknown") + ")");
+        std::cerr << "Failed to load texture: " << path;
+        const char * reason = stbi_failure_reason();
+        if (reason)
+            std::cerr << " (" << reason << ")";
+        std::cerr << std::endl;
+        return 0;
     }
 
-    GLenum format = GL_RGB;
-    if (channels == 1)
-        format = GL_RED;
-    else if (channels == 3)
-        format = GL_RGB;
-    else if (channels == 4)
-        format = GL_RGBA;
-    else
-    {
-        stbi_image_free(data);
-        throw std::runtime_error("Unsupported channel count in texture: " + path);
-    }
+    GLuint texid = 0;
+    glGenTextures(1, &texid);
 
-    GLuint textureID = 0;
-    glGenTextures(1, &textureID);
-    glBindTexture(GL_TEXTURE_2D, textureID);
+    // Select this texture
+    glBindTexture(GL_TEXTURE_2D, texid);
 
+    // Wrapping parameters (repeat in S and T)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
-    glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-    glGenerateMipmap(GL_TEXTURE_2D);
+    // Filtering parameters (nearest-neighbor, like the example)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+    // Upload data as RGB. requested 3 components above, so this is safe.
+    glTexImage2D(GL_TEXTURE_2D,
+                 0,              // level of detail (0 = base)
+                 GL_RGB,         // internal format on GPU
+                 width,
+                 height,
+                 0,              // border
+                 GL_RGB,         // data format
+                 GL_UNSIGNED_BYTE,
+                 data);          // pointer to pixels
+
+    // Free CPU-side image
     stbi_image_free(data);
-    glBindTexture(GL_TEXTURE_2D, 0);
 
-    return textureID;
+    // Leave it bound; can unbind if wanted:
+    // glBindTexture(GL_TEXTURE_2D, 0);
+
+    return texid;
 }
+
