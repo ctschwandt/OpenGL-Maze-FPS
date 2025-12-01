@@ -23,11 +23,12 @@ namespace game
         health          = baseHealth;
     }
 
-    CylinderBot::CylinderBot()
-        : Enemy(EnemyType::CylinderBot, 14.0f, 80)
+    RectBot::RectBot()
+        : Enemy(EnemyType::RectBot, 14.0f, 80)
     {
-        radius = 0.6f;
+        radius = 0.7f;
         height = 1.6f;
+        set_collision_size(0.9f, 0.6f);
     }
 
     SphereDrone::SphereDrone()
@@ -35,6 +36,7 @@ namespace game
     {
         radius = 0.7f;
         height = 1.0f;
+        set_collision_size(radius, radius);
     }
 
     CubeTurret::CubeTurret()
@@ -42,6 +44,7 @@ namespace game
     {
         radius = 0.9f;
         height = 1.2f;
+        set_collision_size(radius, radius);
     }
 
     PyramidCharger::PyramidCharger()
@@ -49,6 +52,7 @@ namespace game
     {
         radius = 0.8f;
         height = 1.4f;
+        set_collision_size(radius, radius);
     }
 
     namespace
@@ -60,8 +64,8 @@ namespace game
         {
             switch (type)
             {
-            case EnemyType::CylinderBot:
-                return CylinderBot();
+            case EnemyType::RectBot:
+                return RectBot();
             case EnemyType::SphereDrone:
                 return SphereDrone();
             case EnemyType::CubeTurret:
@@ -74,10 +78,10 @@ namespace game
 
         EnemyType pick_enemy_type(const EnemySpawnWeights & weights)
         {
-            return EnemyType::CylinderBot;
+            return EnemyType::RectBot;
             std::array<std::pair<EnemyType, float>, 4> weightedTypes =
             {{
-                { EnemyType::CylinderBot,    weights.cylinderBot },
+                { EnemyType::RectBot,        weights.rectBot },
                 { EnemyType::SphereDrone,    weights.sphereDrone },
                 { EnemyType::CubeTurret,     weights.cubeTurret },
                 { EnemyType::PyramidCharger, weights.pyramidCharger }
@@ -91,7 +95,7 @@ namespace game
                 });
 
             if (totalWeight <= 0.0f)
-                return EnemyType::CylinderBot;
+                return EnemyType::RectBot;
 
             float roll   = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
             float target = roll * totalWeight;
@@ -112,13 +116,13 @@ namespace game
     {
         switch (type_)
         {
-        case EnemyType::CylinderBot:
+        case EnemyType::RectBot:
         {
             constexpr float GROUND_Y   = 0.0f;
             constexpr float TILE_SCALE = 15.0f;
             constexpr float AGGRESSIVE_RANGE = TILE_SCALE;
 
-            // CylinderBot stays on the ground plane.
+            // RectBot stays on the ground plane.
             pos.y = GROUND_Y;
 
             glm::vec3 toPlayer = playerPos - pos;
@@ -190,12 +194,12 @@ namespace game
                 vel = dir * moveSpeed_;
             }
 
-            auto collides_with_wall = [&](float worldX, float worldZ, float collisionRadius) -> bool
+            auto collides_with_wall = [&](float worldX, float worldZ, float halfWidth, float halfDepth) -> bool
             {
-                int x0 = static_cast<int>(std::floor((worldX - collisionRadius) / TILE_SCALE));
-                int x1 = static_cast<int>(std::floor((worldX + collisionRadius) / TILE_SCALE));
-                int z0 = static_cast<int>(std::floor((worldZ - collisionRadius) / TILE_SCALE));
-                int z1 = static_cast<int>(std::floor((worldZ + collisionRadius) / TILE_SCALE));
+                int x0 = static_cast<int>(std::floor((worldX - halfWidth) / TILE_SCALE));
+                int x1 = static_cast<int>(std::floor((worldX + halfWidth) / TILE_SCALE));
+                int z0 = static_cast<int>(std::floor((worldZ - halfDepth) / TILE_SCALE));
+                int z1 = static_cast<int>(std::floor((worldZ + halfDepth) / TILE_SCALE));
 
                 for (int tr = z0; tr <= z1; ++tr)
                 {
@@ -211,13 +215,13 @@ namespace game
 
             glm::vec3 newPos = pos + vel * dt;
 
-            if (collides_with_wall(newPos.x, pos.z, radius))
+            if (collides_with_wall(newPos.x, pos.z, collisionHalfWidth_, collisionHalfDepth_))
             {
                 newPos.x = pos.x;
                 vel.x    = 0.0f;
             }
 
-            if (collides_with_wall(newPos.x, newPos.z, radius))
+            if (collides_with_wall(newPos.x, newPos.z, collisionHalfWidth_, collisionHalfDepth_))
             {
                 newPos.z = pos.z;
                 vel.z    = 0.0f;
@@ -243,17 +247,17 @@ namespace game
     {
         switch (type_)
         {
-        case EnemyType::CylinderBot:
+        case EnemyType::RectBot:
         {
             glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT);
             glDisable(GL_LIGHTING);
-            
+
             glPushMatrix();
             glTranslatef(pos.x, pos.y + (height * 0.5f), pos.z);
             glRotatef(yaw * 180.0f / static_cast<float>(M_PI), 0.0f, 1.0f, 0.0f);
 
             glColor3f(0.2f, 0.6f, 1.0f);
-            draw_cylinder(radius, height);
+            draw_box(collisionHalfWidth_ * 2.0f, height, collisionHalfDepth_ * 2.0f);
 
             glPopMatrix();
 
