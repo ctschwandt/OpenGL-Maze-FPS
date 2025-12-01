@@ -301,6 +301,7 @@ namespace game
         {
             glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT);
             glDisable(GL_LIGHTING);
+            glDisable(GL_CULL_FACE);
 
             glPushMatrix();
             glTranslatef(pos.x, pos.y + (height * 0.5f), pos.z);
