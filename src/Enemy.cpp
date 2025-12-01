@@ -110,6 +110,39 @@ namespace game
 
             return weightedTypes.back().first;
         }
+
+        void resolve_enemy_collisions(std::vector<Enemy> & enemies)
+        {
+            constexpr float MIN_DIST_SQ_EPSILON = 0.0001f;
+
+            const std::size_t count = enemies.size();
+            for (std::size_t i = 0; i < count; ++i)
+            {
+                for (std::size_t j = i + 1; j < count; ++j)
+                {
+                    glm::vec2 diff(
+                        enemies[j].pos.x - enemies[i].pos.x,
+                        enemies[j].pos.z - enemies[i].pos.z);
+
+                    float dist2 = glm::dot(diff, diff);
+                    float minDist = enemies[i].radius + enemies[j].radius;
+                    float minDist2 = minDist * minDist;
+
+                    if (dist2 < minDist2 && dist2 > MIN_DIST_SQ_EPSILON)
+                    {
+                        float dist    = std::sqrt(dist2);
+                        float overlap = minDist - dist;
+                        glm::vec2 norm   = diff / dist;
+                        glm::vec2 offset = norm * (overlap * 0.5f);
+
+                        enemies[i].pos.x -= offset.x;
+                        enemies[i].pos.z -= offset.y;
+                        enemies[j].pos.x += offset.x;
+                        enemies[j].pos.z += offset.y;
+                    }
+                }
+            }
+        }
     } // anonymous namespace
 
     void Enemy::update(float dt, const glm::vec3 & playerPos, const Maze & maze)
@@ -345,6 +378,8 @@ namespace game
         auto & enemies = active_enemies();
         for (auto & enemy : enemies)
             enemy.update(dt, playerPos, maze);
+
+        resolve_enemy_collisions(enemies);
     }
 
     void draw_enemies(const std::vector<Enemy> & enemies)
