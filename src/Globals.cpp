@@ -9,4 +9,7 @@ namespace globals
     bool draw_axes = true;
     bool draw_wire = false;
     bool top_down_view = false;
+
+    GLuint floor_texture = 0;
+    GLuint wall_texture = 0;
 }

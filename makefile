@@ -1,6 +1,6 @@
 CXX := g++
 CXXFLAGS := -g -Wall -Iinclude
-LDFLAGS := -lGL -lGLU -lGLEW -lglfw
+LDFLAGS := -lGL -lGLU -lGLEW -lglfw -lpng -ljpeg
 
 SRC_DIR := src
 BUILD_DIR := build
