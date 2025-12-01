@@ -8,6 +8,7 @@
 #include <GLFW/glfw3.h>
 #include <cmath>
 #include <cstdlib>
+#include <ctime>
 #include <vector>
 
 #include "Globals.h"
@@ -26,6 +27,7 @@
 #include "Enemy.h"
 #include "Player.h"
 #include "Projectile.h"
+#include "Texture.h"
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/gtx/norm.hpp>
@@ -71,14 +73,16 @@ void init()
     glEnable(GL_CULL_FACE);
     glCullFace(GL_BACK);
     glFrontFace(GL_CCW);
+
+    glEnable(GL_TEXTURE_2D);
 }
 
 //==============================================================
 // Drawing Helpers
 //==============================================================
-// Draw an axis-aligned box given center and half-sizes
-void draw_box(float cx, float cy, float cz,
-              float hx, float hy, float hz)
+// Draw an axis-aligned textured box given center and half-sizes
+void draw_textured_box(float cx, float cy, float cz,
+                       float hx, float hy, float hz)
 {
     float x0 = cx - hx, x1 = cx + hx;
     float y0 = cy - hy, y1 = cy + hy;
@@ -88,45 +92,45 @@ void draw_box(float cx, float cy, float cz,
 
     // front (z1)
     glNormal3f(0, 0, 1);
-    glVertex3f(x0, y0, z1);
-    glVertex3f(x1, y0, z1);
-    glVertex3f(x1, y1, z1);
-    glVertex3f(x0, y1, z1);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(x0, y0, z1);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(x1, y0, z1);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(x1, y1, z1);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(x0, y1, z1);
 
     // back (z0)
     glNormal3f(0, 0,-1);
-    glVertex3f(x1, y0, z0);
-    glVertex3f(x0, y0, z0);
-    glVertex3f(x0, y1, z0);
-    glVertex3f(x1, y1, z0);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(x1, y0, z0);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(x0, y0, z0);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(x0, y1, z0);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(x1, y1, z0);
 
     // left (x0)
     glNormal3f(-1, 0, 0);
-    glVertex3f(x0, y0, z0);
-    glVertex3f(x0, y0, z1);
-    glVertex3f(x0, y1, z1);
-    glVertex3f(x0, y1, z0);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(x0, y0, z0);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(x0, y0, z1);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(x0, y1, z1);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(x0, y1, z0);
 
     // right (x1)
     glNormal3f(1, 0, 0);
-    glVertex3f(x1, y0, z1);
-    glVertex3f(x1, y0, z0);
-    glVertex3f(x1, y1, z0);
-    glVertex3f(x1, y1, z1);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(x1, y0, z1);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(x1, y0, z0);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(x1, y1, z0);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(x1, y1, z1);
 
     // top (y1)
     glNormal3f(0, 1, 0);
-    glVertex3f(x0, y1, z1);
-    glVertex3f(x1, y1, z1);
-    glVertex3f(x1, y1, z0);
-    glVertex3f(x0, y1, z0);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(x0, y1, z1);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(x1, y1, z1);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(x1, y1, z0);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(x0, y1, z0);
 
     // bottom (y0)
     glNormal3f(0,-1, 0);
-    glVertex3f(x0, y0, z0);
-    glVertex3f(x1, y0, z0);
-    glVertex3f(x1, y0, z1);
-    glVertex3f(x0, y0, z1);
+    glTexCoord2f(0.0f, 0.0f); glVertex3f(x0, y0, z0);
+    glTexCoord2f(1.0f, 0.0f); glVertex3f(x1, y0, z0);
+    glTexCoord2f(1.0f, 1.0f); glVertex3f(x1, y0, z1);
+    glTexCoord2f(0.0f, 1.0f); glVertex3f(x0, y0, z1);
 
     glEnd();
 }
@@ -150,10 +154,32 @@ void draw_maze_columns()
             float cy = hy;          // center in Y
 
             // Each wall fully occupies one 1x1 tile footprint
-            draw_box(cx, cy, cz,
-                     0.5f, hy, 0.5f);
+            draw_textured_box(cx, cy, cz,
+                              0.5f, hy, 0.5f);
         }
     }
+}
+
+void draw_maze_floor(float maze_span, int tiles_n)
+{
+    glBindTexture(GL_TEXTURE_2D, globals::floor_texture);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+
+    float repeat = static_cast<float>(tiles_n);
+
+    glBegin(GL_QUADS);
+    glNormal3f(0.0f, 1.0f, 0.0f);
+    glTexCoord2f(0.0f,      0.0f);       glVertex3f(0.0f,      0.0f, 0.0f);
+    glTexCoord2f(repeat,    0.0f);       glVertex3f(maze_span, 0.0f, 0.0f);
+    glTexCoord2f(repeat,    repeat);     glVertex3f(maze_span, 0.0f, maze_span);
+    glTexCoord2f(0.0f,      repeat);     glVertex3f(0.0f,      0.0f, maze_span);
+    glEnd();
+}
+
+void init_textures()
+{
+    globals::floor_texture = load_texture_2d("assets/textures/floor1.jpg");
+    globals::wall_texture  = load_texture_2d("assets/textures/wall1.png");
 }
 
 void draw_player_avatar(const game::PlayerMovement & playerState)
@@ -223,8 +249,8 @@ void draw_projectiles(const std::vector<game::Projectile> & projectiles)
     glColor3f(1.0f, 0.9f, 0.2f);
     for (const auto & p : projectiles)
     {
-        draw_box(p.position.x, p.position.y, p.position.z,
-                 radius, radius, radius);
+        draw_textured_box(p.position.x, p.position.y, p.position.z,
+                          radius, radius, radius);
     }
 }
 
@@ -318,7 +344,12 @@ void display()
 
     if (globals::draw_plane)
     {
-        mygllib::draw_xz_plane(0.0f , maze_span, 0.0f, maze_span); //-5000.0f, 5000.0f, -5000.0f, 5000.0f);
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, globals::floor_texture);
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+        draw_maze_floor(maze_span, maze.tiles_n);
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glDisable(GL_TEXTURE_2D);
     }
     if (globals::draw_axes)
     {
@@ -336,7 +367,12 @@ void display()
     glPushMatrix();
     {
         glScalef(TILE_SCALE, TILE_SCALE, TILE_SCALE);
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, globals::wall_texture);
+        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
         draw_maze_columns();
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glDisable(GL_TEXTURE_2D);
     }
     glPopMatrix();
 
@@ -403,6 +439,17 @@ int main(int argc, char ** argv)
     }
 
     init();
+
+    try
+    {
+        init_textures();
+    }
+    catch (const std::exception & ex)
+    {
+        std::cerr << ex.what() << std::endl;
+        glfwTerminate();
+        return -1;
+    }
 
     game::spawn_enemies(maze, TILE_SCALE, playerStartCell, ENEMY_SPAWN_WEIGHTS);
 
