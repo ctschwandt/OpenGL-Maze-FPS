@@ -186,8 +186,25 @@ namespace game
         if (glm::length2(wishDir) > 0.0f)
             wishDir = glm::normalize(wishDir);
 
-        if (globals::top_down_view && glm::length2(wishDir) > 0.0f)
-            state.facingDirection = wishDir;
+        if (globals::top_down_view)
+        {
+            glm::vec3 arrowDir(0.0f);
+
+            if (input.key_down(GLFW_KEY_UP))
+                arrowDir.z -= 1.0f;
+
+            if (input.key_down(GLFW_KEY_DOWN))
+                arrowDir.z += 1.0f;
+
+            if (input.key_down(GLFW_KEY_RIGHT))
+                arrowDir.x += 1.0f;
+
+            if (input.key_down(GLFW_KEY_LEFT))
+                arrowDir.x -= 1.0f;
+
+            if (glm::length2(arrowDir) > 0.0f)
+                state.facingDirection = glm::normalize(arrowDir);
+        }
 
         // Edge-triggered inputs
         bool dashPressed = input.key_down(GLFW_KEY_LEFT_SHIFT) && !state.dashKeyLast;
