@@ -195,7 +195,9 @@ void draw_player_direction_indicator(const game::PlayerMovement & playerState)
     const float arrowLength   = game::PLAYER_RADIUS * 2.0f;
     const float arrowHalfW    = arrowLength * 0.35f;
     const float arrowBackDist = arrowLength * 0.35f;
-    const float arrowHeight   = playerState.groundHeight + 0.05f;
+
+    // Put the arrow slightly above the top of the player cylinder
+    const float arrowHeight = playerState.position.y + game::PLAYER_BODY_HEIGHT + 0.05f;
 
     glm::vec3 tip        = playerState.position + dir * arrowLength;
     glm::vec3 baseCenter = playerState.position - dir * arrowBackDist;
@@ -207,8 +209,8 @@ void draw_player_direction_indicator(const game::PlayerMovement & playerState)
     glColor3f(0.1f, 0.1f, 0.1f);
     glBegin(GL_TRIANGLES);
     glNormal3f(0.0f, 1.0f, 0.0f);
-    glVertex3f(tip.x, arrowHeight, tip.z);
-    glVertex3f(baseLeft.x, arrowHeight, baseLeft.z);
+    glVertex3f(tip.x,       arrowHeight, tip.z);
+    glVertex3f(baseLeft.x,  arrowHeight, baseLeft.z);
     glVertex3f(baseRight.x, arrowHeight, baseRight.z);
     glEnd();
     glPopAttrib();

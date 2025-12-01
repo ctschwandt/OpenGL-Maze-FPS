@@ -24,7 +24,7 @@ namespace game
     }
 
     CylinderBot::CylinderBot()
-        : Enemy(EnemyType::CylinderBot, 6.0f, 80)
+        : Enemy(EnemyType::CylinderBot, 14.0f, 80)
     {
         radius = 0.6f;
         height = 1.6f;
@@ -245,6 +245,9 @@ namespace game
         {
         case EnemyType::CylinderBot:
         {
+            glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT);
+            glDisable(GL_LIGHTING);
+            
             glPushMatrix();
             glTranslatef(pos.x, pos.y + (height * 0.5f), pos.z);
             glRotatef(yaw * 180.0f / static_cast<float>(M_PI), 0.0f, 1.0f, 0.0f);
@@ -253,6 +256,8 @@ namespace game
             draw_cylinder(radius, height);
 
             glPopMatrix();
+
+            glPopAttrib();
             break;
         }
 
