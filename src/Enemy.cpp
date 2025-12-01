@@ -58,6 +58,7 @@ namespace game
     namespace
     {
         constexpr float TILE_OFFSET      = 0.5f;
+        constexpr float TILE_SCALE       = 15.0f;
         constexpr float ENEMY_ROOM_RATIO = 1.0f; // 1 enemy per open tile (total), excluding player tile
 
         Enemy make_enemy(EnemyType type)
@@ -111,7 +112,29 @@ namespace game
             return weightedTypes.back().first;
         }
 
-        void resolve_enemy_collisions(std::vector<Enemy> & enemies)
+        bool collides_with_wall(float worldX,
+                                float worldZ,
+                                float collisionRadius,
+                                const Maze & maze)
+        {
+            int x0 = static_cast<int>(std::floor((worldX - collisionRadius) / TILE_SCALE));
+            int x1 = static_cast<int>(std::floor((worldX + collisionRadius) / TILE_SCALE));
+            int z0 = static_cast<int>(std::floor((worldZ - collisionRadius) / TILE_SCALE));
+            int z1 = static_cast<int>(std::floor((worldZ + collisionRadius) / TILE_SCALE));
+
+            for (int tr = z0; tr <= z1; ++tr)
+            {
+                for (int tc = x0; tc <= x1; ++tc)
+                {
+                    if (maze.is_wall_tile(tr, tc))
+                        return true;
+                }
+            }
+
+            return false;
+        }
+
+        void resolve_enemy_collisions(std::vector<Enemy> & enemies, const Maze & maze)
         {
             constexpr float MIN_DIST_SQ_EPSILON = 0.0001f;
 
@@ -135,10 +158,24 @@ namespace game
                         glm::vec2 norm   = diff / dist;
                         glm::vec2 offset = norm * (overlap * 0.5f);
 
-                        enemies[i].pos.x -= offset.x;
-                        enemies[i].pos.z -= offset.y;
-                        enemies[j].pos.x += offset.x;
-                        enemies[j].pos.z += offset.y;
+                        glm::vec3 posI    = enemies[i].pos;
+                        glm::vec3 posJ    = enemies[j].pos;
+                        glm::vec3 newPosI = posI;
+                        glm::vec3 newPosJ = posJ;
+
+                        newPosI.x -= offset.x;
+                        newPosI.z -= offset.y;
+                        newPosJ.x += offset.x;
+                        newPosJ.z += offset.y;
+
+                        bool okI = !collides_with_wall(newPosI.x, newPosI.z, enemies[i].radius, maze);
+                        bool okJ = !collides_with_wall(newPosJ.x, newPosJ.z, enemies[j].radius, maze);
+
+                        if (okI)
+                            enemies[i].pos = newPosI;
+
+                        if (okJ)
+                            enemies[j].pos = newPosJ;
                     }
                 }
             }
@@ -152,7 +189,6 @@ namespace game
         case EnemyType::CylinderBot:
         {
             constexpr float GROUND_Y   = 0.0f;
-            constexpr float TILE_SCALE = 15.0f;
             constexpr float AGGRESSIVE_RANGE = TILE_SCALE;
 
             // CylinderBot stays on the ground plane.
@@ -227,34 +263,15 @@ namespace game
                 vel = dir * moveSpeed_;
             }
 
-            auto collides_with_wall = [&](float worldX, float worldZ, float halfWidth, float halfDepth) -> bool
-            {
-                int x0 = static_cast<int>(std::floor((worldX - halfWidth) / TILE_SCALE));
-                int x1 = static_cast<int>(std::floor((worldX + halfWidth) / TILE_SCALE));
-                int z0 = static_cast<int>(std::floor((worldZ - halfDepth) / TILE_SCALE));
-                int z1 = static_cast<int>(std::floor((worldZ + halfDepth) / TILE_SCALE));
-
-                for (int tr = z0; tr <= z1; ++tr)
-                {
-                    for (int tc = x0; tc <= x1; ++tc)
-                    {
-                        if (maze.is_wall_tile(tr, tc))
-                            return true;
-                    }
-                }
-
-                return false;
-            };
-
             glm::vec3 newPos = pos + vel * dt;
 
-            if (collides_with_wall(newPos.x, pos.z, collisionHalfWidth_, collisionHalfDepth_))
+            if (collides_with_wall(newPos.x, pos.z, collisionHalfWidth_, maze))
             {
                 newPos.x = pos.x;
                 vel.x    = 0.0f;
             }
 
-            if (collides_with_wall(newPos.x, newPos.z, collisionHalfWidth_, collisionHalfDepth_))
+            if (collides_with_wall(newPos.x, newPos.z, collisionHalfWidth_, maze))
             {
                 newPos.z = pos.z;
                 vel.z    = 0.0f;
@@ -377,9 +394,21 @@ namespace game
     {
         auto & enemies = active_enemies();
         for (auto & enemy : enemies)
+            enemy.prevPos = enemy.pos;
+
+        for (auto & enemy : enemies)
             enemy.update(dt, playerPos, maze);
 
-        resolve_enemy_collisions(enemies);
+        resolve_enemy_collisions(enemies, maze);
+
+        for (auto & enemy : enemies)
+        {
+            if (collides_with_wall(enemy.pos.x, enemy.pos.z, enemy.radius, maze))
+            {
+                enemy.pos = enemy.prevPos;
+                enemy.vel = glm::vec3(0.0f);
+            }
+        }
     }
 
     void draw_enemies(const std::vector<Enemy> & enemies)

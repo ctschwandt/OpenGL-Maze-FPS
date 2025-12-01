@@ -34,6 +34,7 @@ namespace game
         virtual void draw() const;
 
     protected:
+        glm::vec3 prevPos{ 0.0f };
         EnemyType type_;
         float moveSpeed_ = 0.0f;
         float collisionHalfWidth_ = 0.5f;
