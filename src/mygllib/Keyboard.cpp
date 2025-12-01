@@ -9,6 +9,7 @@
 #include "mygllib/Keyboard.h"
 #include "mygllib/SingletonView.h"
 #include "mygllib/View.h"
+#include "Globals.h"
 
 namespace
 {
@@ -27,6 +28,9 @@ void mygllib::Keyboard::update_from_input(const GLFWInput & input, float dt)
     {
         glfwSetWindowShouldClose(input.window(), GLFW_TRUE);
     }
+
+    if (globals::top_down_view)
+        return;
 
     // --- Rotation (arrow keys) ---
 
