@@ -171,8 +171,13 @@ void draw_maze_floor(float maze_span, int tiles_n)
 
 void init_textures()
 {
-    globals::floor_texture = load_texture_2d("assets/textures/floor1.jpg");
-    globals::wall_texture  = load_texture_2d("assets/textures/wall1.jpg");
+    int idx = 1 + (std::rand() % 3);
+
+    std::string floorPath = "assets/textures/floor" + std::to_string(idx) + ".jpg";
+    std::string wallPath  = "assets/textures/wall"  + std::to_string(idx) + ".jpg";
+
+    globals::floor_texture = load_texture_2d(floorPath);
+    globals::wall_texture  = load_texture_2d(wallPath);
 }
 
 void draw_player_avatar(const game::PlayerMovement & playerState)
@@ -395,6 +400,7 @@ int main(int argc, char ** argv)
     (void)argc;
     (void)argv;
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
+    glfwSwapInterval(0); // turn off v-sync
 
     // ----- Maze generation (text debug) -----
     int start_r = std::rand() % maze.n;
