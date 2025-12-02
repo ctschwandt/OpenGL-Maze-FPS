@@ -140,6 +140,9 @@ namespace game
             if (glm::length2(forward) == 0.0f)
                 forward = glm::vec3(0.0f, 0.0f, -1.0f);
 
+            state.health       = state.maxHealth;
+            state.damageBuffer = 0.0f;
+
             glm::vec3 eyeOffset = forward * PLAYER_EYE_RADIUS;
 
             state.position     = glm::vec3(eyePos.x - eyeOffset.x,

@@ -8,6 +8,7 @@
 #include <glm/vec3.hpp>
 
 #include "Actor.h"
+#include "Player.h"
 
 class Maze;
 
@@ -91,7 +92,7 @@ namespace game
                        float tileScale,
                        const glm::ivec2 & playerStartCell,
                        const EnemySpawnWeights & weights);
-    void update_enemies(float dt, const glm::vec3 & playerPos, const Maze & maze);
+    void update_enemies(float dt, game::PlayerMovement & playerState, const Maze & maze);
     void draw_enemies(const std::vector<Enemy> & enemies);
 }
 

@@ -13,6 +13,7 @@
 
 #include "Draw.h"
 #include "Maze.h"
+#include "Player.h"
 
 namespace game
 {
@@ -60,6 +61,7 @@ namespace game
         constexpr float TILE_OFFSET      = 0.5f;
         constexpr float TILE_SCALE       = 15.0f;
         constexpr float ENEMY_ROOM_RATIO = 1.0f; // 1 enemy per open tile (total), excluding player tile
+        constexpr float CYLINDER_BOT_CONTACT_DAMAGE_PER_SECOND = 25.0f;
 
         Enemy make_enemy(EnemyType type)
         {
@@ -178,6 +180,38 @@ namespace game
                             enemies[j].pos = newPosJ;
                     }
                 }
+            }
+        }
+
+        void apply_cylinder_bot_damage(game::PlayerMovement & playerState,
+                                       const std::vector<Enemy> & enemies,
+                                       float dt)
+        {
+            float contactRadius = game::PLAYER_RADIUS;
+            float accumulatedDamage = 0.0f;
+
+            for (const auto & enemy : enemies)
+            {
+                if (enemy.type() != EnemyType::CylinderBot)
+                    continue;
+
+                glm::vec2 diff(enemy.pos.x - playerState.position.x,
+                               enemy.pos.z - playerState.position.z);
+
+                float contactDistance = enemy.radius + contactRadius;
+                if (glm::dot(diff, diff) <= contactDistance * contactDistance)
+                {
+                    accumulatedDamage += CYLINDER_BOT_CONTACT_DAMAGE_PER_SECOND * dt;
+                }
+            }
+
+            playerState.damageBuffer += accumulatedDamage;
+            int damage = static_cast<int>(playerState.damageBuffer);
+
+            if (damage > 0)
+            {
+                playerState.health = std::max(0, playerState.health - damage);
+                playerState.damageBuffer -= static_cast<float>(damage);
             }
         }
     } // anonymous namespace
@@ -390,8 +424,9 @@ namespace game
         }
     }
 
-    void update_enemies(float dt, const glm::vec3 & playerPos, const Maze & maze)
+    void update_enemies(float dt, game::PlayerMovement & playerState, const Maze & maze)
     {
+        const glm::vec3 playerPos = playerState.position;
         auto & enemies = active_enemies();
         for (auto & enemy : enemies)
             enemy.set_previous_position(enemy.pos);
@@ -409,6 +444,8 @@ namespace game
                 enemy.vel = glm::vec3(0.0f);
             }
         }
+
+        apply_cylinder_bot_damage(playerState, enemies, dt);
     }
 
     void draw_enemies(const std::vector<Enemy> & enemies)
