@@ -25,11 +25,12 @@ namespace game
     class Enemy : public Actor
     {
     public:
-        Enemy(EnemyType type, float moveSpeed, int baseHealth);
+        Enemy(EnemyType type, float pathSpeed, float chaseSpeed, int baseHealth);
         virtual ~Enemy() = default;
 
         EnemyType type() const { return type_; }
-        float move_speed() const { return moveSpeed_; }
+        float path_speed() const { return pathSpeed_; }
+        float chase_speed() const { return chaseSpeed_; }
 
         glm::vec3 previous_position() const { return prevPos; }
         void set_previous_position(const glm::vec3 & pos) { prevPos = pos; }
@@ -40,7 +41,8 @@ namespace game
     protected:
         glm::vec3 prevPos{ 0.0f };
         EnemyType type_;
-        float moveSpeed_ = 0.0f;
+        float pathSpeed_  = 0.0f;
+        float chaseSpeed_ = 0.0f;
         float collisionHalfWidth_ = 0.5f;
         float collisionHalfDepth_ = 0.5f;
         std::vector<glm::ivec2> path_;
