@@ -17,15 +17,16 @@
 
 namespace game
 {
-    Enemy::Enemy(EnemyType type, float moveSpeed, int baseHealth)
+    Enemy::Enemy(EnemyType type, float pathSpeed, float chaseSpeed, int baseHealth)
         : type_(type)
     {
-        moveSpeed_      = moveSpeed;
-        health          = baseHealth;
+        pathSpeed_  = pathSpeed;
+        chaseSpeed_ = chaseSpeed;
+        health      = baseHealth;
     }
 
     CylinderBot::CylinderBot()
-        : Enemy(EnemyType::CylinderBot, 14.0f, 80)
+        : Enemy(EnemyType::CylinderBot, 10.0f, 14.0f, 80)
     {
         radius = 0.8f;
         height = 2.4f;
@@ -33,7 +34,7 @@ namespace game
     }
 
     SphereDrone::SphereDrone()
-        : Enemy(EnemyType::SphereDrone, 8.0f, 60)
+        : Enemy(EnemyType::SphereDrone, 6.0f, 8.0f, 60)
     {
         radius = 0.7f;
         height = 1.0f;
@@ -41,7 +42,7 @@ namespace game
     }
 
     CubeTurret::CubeTurret()
-        : Enemy(EnemyType::CubeTurret, 0.0f, 120)
+        : Enemy(EnemyType::CubeTurret, 0.0f, 0.0f, 120)
     {
         radius = 0.9f;
         height = 1.2f;
@@ -49,7 +50,7 @@ namespace game
     }
 
     PyramidCharger::PyramidCharger()
-        : Enemy(EnemyType::PyramidCharger, 10.0f, 90)
+        : Enemy(EnemyType::PyramidCharger, 7.0f, 10.0f, 90)
     {
         radius = 0.8f;
         height = 1.4f;
@@ -248,7 +249,7 @@ namespace game
                 if (glm::length2(dir) > 0.0001f)
                     dir = glm::normalize(dir);
 
-                vel = dir * moveSpeed_;
+                vel = dir * chaseSpeed_;
             }
             else
             {
@@ -294,7 +295,7 @@ namespace game
                 if (glm::length2(dir) > 0.0001f)
                     dir = glm::normalize(dir);
 
-                vel = dir * moveSpeed_;
+                vel = dir * pathSpeed_;
             }
 
             glm::vec3 newPos = pos + vel * dt;
