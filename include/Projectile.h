@@ -21,7 +21,8 @@ namespace game
     void update_projectiles(float dt,
                             const Maze & maze,
                             float tileScale,
-                            std::vector<class Enemy> & enemies);
+                            std::vector<class Enemy> & enemies,
+                            class PlayerMovement & playerState);
 }
 
 #endif // PROJECTILE_H
