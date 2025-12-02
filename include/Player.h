@@ -54,6 +54,7 @@ namespace game
         float slideThreshold   = 8.0f;
         float collisionRadius  = PLAYER_EYE_RADIUS + 0.3f;   // horizontal collision radius in world units
         float fireRate         = 0.2f;    // seconds between shots
+        float damageBuffer     = 0.0f;    // accumulates fractional damage before applying to integer health
 
         // Utility state
         float groundHeight     = 0.0f;

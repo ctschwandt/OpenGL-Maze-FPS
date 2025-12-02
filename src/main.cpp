@@ -561,7 +561,7 @@ int main(int argc, char ** argv)
         mygllib::Mouse::update_from_input(input);
         mygllib::Keyboard::update_from_input(input, dt);
         game::update_player_movement(input, dt, view, maze, TILE_SCALE);
-        game::update_enemies(dt, game::player_movement_state().position, maze);
+        game::update_enemies(dt, game::player_movement_state(), maze);
         game::update_projectiles(dt, maze, TILE_SCALE, game::active_enemies());
 
         if (globals::top_down_view)
