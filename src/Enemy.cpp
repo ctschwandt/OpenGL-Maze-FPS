@@ -62,6 +62,7 @@ namespace game
         constexpr float TILE_OFFSET      = 0.5f;
         constexpr float TILE_SCALE       = 15.0f;
         constexpr float ENEMY_ROOM_RATIO = 1.0f; // 1 enemy per open tile (total), excluding player tile
+        constexpr int   MAX_PATH_LENGTH  = 40;
         constexpr float CYLINDER_BOT_CONTACT_DAMAGE_PER_SECOND = 25.0f;
 
         Enemy make_enemy(EnemyType type)
@@ -257,7 +258,9 @@ namespace game
                 if (path_.empty() || playerTile != lastPlayerTile_ || reachedTargetTile)
                 {
                     std::vector<glm::ivec2> newPath;
-                    if (maze.findPath(curTr, curTc, playerTr, playerTc, newPath))
+                    bool hasPath       = maze.findPath(curTr, curTc, playerTr, playerTc, newPath);
+                    bool pathShortEnough = hasPath && static_cast<int>(newPath.size()) <= MAX_PATH_LENGTH;
+                    if (pathShortEnough)
                     {
                         path_           = newPath;
                         lastPlayerTile_ = playerTile;
@@ -274,10 +277,10 @@ namespace game
                     }
                     else
                     {
-                        // Without a valid path, fall back to staying put instead of
-                        // marching straight toward the player (which can ignore
-                        // walls). Keep attempting to find a path on subsequent
-                        // updates.
+                        // Without a valid path, or if the path is too long, fall back
+                        // to staying put instead of marching straight toward the player
+                        // (which can ignore walls). Keep attempting to find a shorter
+                        // path on subsequent updates.
                         path_.clear();
                         pathIndex_      = 0;
                         targetTile_     = { curTr, curTc };
