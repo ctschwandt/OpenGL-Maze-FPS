@@ -26,7 +26,7 @@ namespace game
     }
 
     CylinderBot::CylinderBot()
-        : Enemy(EnemyType::CylinderBot, 10.0f, 14.0f, 80)
+        : Enemy(EnemyType::CylinderBot, 7.0f, 14.0f, 80)
     {
         radius = 0.8f;
         height = 2.4f;
@@ -62,8 +62,8 @@ namespace game
         constexpr float TILE_OFFSET      = 0.5f;
         constexpr float TILE_SCALE       = 15.0f;
         constexpr float ENEMY_ROOM_RATIO = 1.0f; // 1 enemy per open tile (total), excluding player tile
-        constexpr int   MAX_PATH_LENGTH  = 40;
-        constexpr float CYLINDER_BOT_CONTACT_DAMAGE_PER_SECOND = 25.0f;
+        constexpr int   MAX_PATH_LENGTH  = 9;
+        constexpr float CYLINDER_BOT_CONTACT_DAMAGE_PER_SECOND = 10.0f;
 
         Enemy make_enemy(EnemyType type)
         {
