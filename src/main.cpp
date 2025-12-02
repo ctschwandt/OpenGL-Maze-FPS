@@ -28,6 +28,7 @@
 #include "Player.h"
 #include "Projectile.h"
 #include "Texture.h"
+#include "mygllib/config.h"
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/gtx/norm.hpp>
@@ -252,6 +253,75 @@ void draw_projectiles(const std::vector<game::Projectile> & projectiles)
     }
 }
 
+void draw_health_bar(const game::PlayerMovement & playerState)
+{
+    const float margin     = 20.0f;
+    const float barWidth   = 200.0f;
+    const float barHeight  = 20.0f;
+    const float padding    = 2.0f;
+
+    float ratio = (playerState.maxHealth > 0)
+                ? static_cast<float>(playerState.health) / static_cast<float>(playerState.maxHealth)
+                : 0.0f;
+    ratio = std::clamp(ratio, 0.0f, 1.0f);
+
+    glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_COLOR_BUFFER_BIT);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_CULL_FACE);
+
+    glMatrixMode(GL_PROJECTION);
+    glPushMatrix();
+    glLoadIdentity();
+    glOrtho(0.0, mygllib::WIN_W, 0.0, mygllib::WIN_H, -1.0, 1.0);
+
+    glMatrixMode(GL_MODELVIEW);
+    glPushMatrix();
+    glLoadIdentity();
+
+    const float x0 = margin;
+    const float y0 = margin;
+    const float x1 = x0 + barWidth;
+    const float y1 = y0 + barHeight;
+
+    // Background
+    glColor4f(0.05f, 0.05f, 0.05f, 0.8f);
+    glBegin(GL_QUADS);
+    glVertex2f(x0, y0);
+    glVertex2f(x1, y0);
+    glVertex2f(x1, y1);
+    glVertex2f(x0, y1);
+    glEnd();
+
+    // Fill
+    float fillWidth = (barWidth - 2.0f * padding) * ratio;
+    glColor3f(0.8f, 0.1f, 0.1f);
+    glBegin(GL_QUADS);
+    glVertex2f(x0 + padding, y0 + padding);
+    glVertex2f(x0 + padding + fillWidth, y0 + padding);
+    glVertex2f(x0 + padding + fillWidth, y1 - padding);
+    glVertex2f(x0 + padding, y1 - padding);
+    glEnd();
+
+    // Border
+    glColor3f(0.9f, 0.9f, 0.9f);
+    glLineWidth(2.0f);
+    glBegin(GL_LINE_LOOP);
+    glVertex2f(x0, y0);
+    glVertex2f(x1, y0);
+    glVertex2f(x1, y1);
+    glVertex2f(x0, y1);
+    glEnd();
+
+    glPopMatrix();
+    glMatrixMode(GL_PROJECTION);
+    glPopMatrix();
+    glMatrixMode(GL_MODELVIEW);
+
+    glPopAttrib();
+}
+
 //==============================================================
 // Camera helpers
 //==============================================================
@@ -390,6 +460,8 @@ void display()
         draw_player_direction_indicator(game::player_movement_state());
     game::draw_enemies(game::active_enemies());
     draw_projectiles(game::active_projectiles());
+
+    draw_health_bar(game::player_movement_state());
 }
 
 //==============================================================
