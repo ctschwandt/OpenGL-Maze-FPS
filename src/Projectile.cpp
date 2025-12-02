@@ -8,6 +8,7 @@
 
 #include "Enemy.h"
 #include "Maze.h"
+#include "Player.h"
 
 namespace game
 {
@@ -20,9 +21,22 @@ namespace game
     void update_projectiles(float dt,
                             const Maze & maze,
                             float tileScale,
-                            std::vector<Enemy> & enemies)
+                            std::vector<Enemy> & enemies,
+                            PlayerMovement & playerState)
     {
         auto & projectiles = active_projectiles();
+
+        auto score_for_enemy = [](EnemyType type) -> int
+        {
+            switch (type)
+            {
+            case EnemyType::CylinderBot:   return 100;
+            case EnemyType::SphereDrone:   return 150;
+            case EnemyType::CubeTurret:    return 200;
+            case EnemyType::PyramidCharger:return 175;
+            default:                       return 0;
+            }
+        };
 
         auto hits_wall = [&](const glm::vec3 & pos) -> bool
         {
@@ -60,7 +74,12 @@ namespace game
                 if (!hits_enemy(p, enemy))
                     continue;
 
+                int oldHealth = enemy.health;
                 enemy.health -= p.damage;
+
+                if (enemy.health <= 0 && oldHealth > 0)
+                    playerState.score += score_for_enemy(enemy.type());
+
                 p.remainingLife = -1.0f;
                 break;
             }

@@ -32,6 +32,7 @@ namespace game
         glm::vec3 facingDirection{0.0f, 0.0f, -1.0f};
         int health{100};
         int maxHealth{100};
+        int score{0};
         bool onGround{true};
         bool dashing{false};
         bool sliding{false};

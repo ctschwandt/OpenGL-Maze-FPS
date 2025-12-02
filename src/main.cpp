@@ -9,6 +9,9 @@
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <array>
+#include <cctype>
+#include <string>
 #include <vector>
 
 #include "Globals.h"
@@ -253,6 +256,85 @@ void draw_projectiles(const std::vector<game::Projectile> & projectiles)
     }
 }
 
+struct GlyphPattern
+{
+    std::array<std::string, 5> rows;
+};
+
+const GlyphPattern & glyph_for_char(char c)
+{
+    static const GlyphPattern blank{{"   ", "   ", "   ", "   ", "   "}};
+
+    static const std::array<std::pair<char, GlyphPattern>, 18> glyphs =
+    {{
+        {'0', {{"####", "#  #", "#  #", "#  #", "####"}}},
+        {'1', {{"  # ", "  # ", "  # ", "  # ", "  # "}}},
+        {'2', {{"####", "   #", "####", "#   ", "####"}}},
+        {'3', {{"####", "   #", "####", "   #", "####"}}},
+        {'4', {{"#  #", "#  #", "####", "   #", "   #"}}},
+        {'5', {{"####", "#   ", "####", "   #", "####"}}},
+        {'6', {{"####", "#   ", "####", "#  #", "####"}}},
+        {'7', {{"####", "   #", "   #", "   #", "   #"}}},
+        {'8', {{"####", "#  #", "####", "#  #", "####"}}},
+        {'9', {{"####", "#  #", "####", "   #", "####"}}},
+        {'S', {{"####", "#   ", "### ", "   #", "####"}}},
+        {'C', {{"####", "#   ", "#   ", "#   ", "####"}}},
+        {'O', {{"####", "#  #", "#  #", "#  #", "####"}}},
+        {'R', {{"### ", "#  #", "### ", "# # ", "#  #"}}},
+        {'E', {{"####", "#   ", "### ", "#   ", "####"}}},
+        {':', {{"  ", "##", "  ", "##", "  "}}},
+        {' ', {{"   ", "   ", "   ", "   ", "   "}}},
+        {'-', {{"    ", "    ", "####", "    ", "    "}}}
+    }};
+
+    char key = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+    for (const auto & entry : glyphs)
+    {
+        if (entry.first == key)
+            return entry.second;
+    }
+
+    return blank;
+}
+
+void draw_glyph(float x, float y, float cellSize, const GlyphPattern & glyph)
+{
+    const float height = static_cast<float>(glyph.rows.size());
+
+    glBegin(GL_QUADS);
+    for (std::size_t row = 0; row < glyph.rows.size(); ++row)
+    {
+        const std::string & line = glyph.rows[row];
+        for (std::size_t col = 0; col < line.size(); ++col)
+        {
+            if (line[col] != '#')
+                continue;
+
+            float px = x + static_cast<float>(col) * cellSize;
+            float py = y + (height - 1.0f - static_cast<float>(row)) * cellSize;
+
+            glVertex2f(px,            py);
+            glVertex2f(px + cellSize, py);
+            glVertex2f(px + cellSize, py + cellSize);
+            glVertex2f(px,            py + cellSize);
+        }
+    }
+    glEnd();
+}
+
+void draw_block_text(float x, float y, float cellSize, const std::string & text)
+{
+    float cursor = x;
+    for (char ch : text)
+    {
+        const GlyphPattern & glyph = glyph_for_char(ch);
+        draw_glyph(cursor, y, cellSize, glyph);
+
+        std::size_t width = glyph.rows.empty() ? 0 : glyph.rows.front().size();
+        cursor += (static_cast<float>(width) + 1.0f) * cellSize;
+    }
+}
+
 void draw_health_bar(const game::PlayerMovement & playerState)
 {
     const float margin     = 20.0f;
@@ -313,6 +395,12 @@ void draw_health_bar(const game::PlayerMovement & playerState)
     glVertex2f(x1, y1);
     glVertex2f(x0, y1);
     glEnd();
+
+    glColor3f(0.95f, 0.95f, 0.95f);
+    const float textCellSize = 4.0f;
+    const float textYOffset  = 12.0f;
+    float textY = y1 + textYOffset;
+    draw_block_text(x0, textY, textCellSize, "SCORE: " + std::to_string(playerState.score));
 
     glPopMatrix();
     glMatrixMode(GL_PROJECTION);
@@ -562,7 +650,7 @@ int main(int argc, char ** argv)
         mygllib::Keyboard::update_from_input(input, dt);
         game::update_player_movement(input, dt, view, maze, TILE_SCALE);
         game::update_enemies(dt, game::player_movement_state(), maze);
-        game::update_projectiles(dt, maze, TILE_SCALE, game::active_enemies());
+        game::update_projectiles(dt, maze, TILE_SCALE, game::active_enemies(), game::player_movement_state());
 
         if (globals::top_down_view)
         {
