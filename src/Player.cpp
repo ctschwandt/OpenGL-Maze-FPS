@@ -140,7 +140,10 @@ namespace game
             if (glm::length2(forward) == 0.0f)
                 forward = glm::vec3(0.0f, 0.0f, -1.0f);
 
-            state.health       = state.maxHealth;
+            state.health       = std::clamp(state.health, 0, state.maxHealth);
+            if (state.health == 0)
+                state.health = state.maxHealth;
+            state.score        = std::max(0, state.score);
             state.damageBuffer = 0.0f;
 
             glm::vec3 eyeOffset = forward * PLAYER_EYE_RADIUS;
@@ -151,7 +154,6 @@ namespace game
             state.groundHeight = state.position.y;
             //state.collisionRadius = collisionRadius;
             state.initialized  = true;
-            state.score = 0;
         }
 
         // Movement basis: camera-relative in FPS view, world-relative in top-down

@@ -78,14 +78,27 @@ void place_player_at_cell(const glm::ivec2 & cell)
     view.update_center_from_yaw_pitch();
 }
 
-void reset_player_state_for_spawn()
+void reset_player_state_for_spawn(bool resetStats)
 {
     game::PlayerMovement & playerState = game::player_movement_state();
+    const int preservedHealth    = playerState.health;
+    const int preservedMaxHealth = playerState.maxHealth;
+    const int preservedScore     = playerState.score;
+
     playerState = game::PlayerMovement();
+
+    if (!resetStats)
+    {
+        playerState.health    = preservedHealth;
+        playerState.maxHealth = preservedMaxHealth;
+        playerState.score     = preservedScore;
+    }
     playerState.initialized = false;
 }
 
-void start_new_run()
+bool maze_had_enemies = false;
+
+void start_new_run(bool resetPlayerStats = true)
 {
     glm::ivec2 playerStartCell = random_start_cell();
 
@@ -94,9 +107,10 @@ void start_new_run()
     std::cout << std::endl;
 
     place_player_at_cell(playerStartCell);
-    reset_player_state_for_spawn();
+    reset_player_state_for_spawn(resetPlayerStats);
     game::active_projectiles().clear();
     game::spawn_enemies(maze, TILE_SCALE, playerStartCell, ENEMY_SPAWN_WEIGHTS);
+    maze_had_enemies = !game::active_enemies().empty();
     init_textures();
 }
 
@@ -678,6 +692,12 @@ int main(int argc, char ** argv)
         if (playerState.health <= 0)
         {
             start_new_run();
+            continue;
+        }
+
+        if (maze_had_enemies && game::active_enemies().empty())
+        {
+            start_new_run(false);
             continue;
         }
 
