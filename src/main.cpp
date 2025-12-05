@@ -54,6 +54,17 @@ glm::ivec2 random_start_cell()
     return glm::ivec2(start_r, start_c);
 }
 
+void init_textures()
+{
+    int idx = 1 + (std::rand() % 3);
+
+    std::string floorPath = "assets/textures/floor" + std::to_string(idx) + ".jpg";
+    std::string wallPath  = "assets/textures/wall"  + std::to_string(idx) + ".jpg";
+
+    globals::floor_texture = load_texture_2d(floorPath);
+    globals::wall_texture  = load_texture_2d(wallPath);
+}
+
 void place_player_at_cell(const glm::ivec2 & cell)
 {
     float start_x = TILE_SCALE * (2.0f * static_cast<float>(cell.y) + 1.5f);
@@ -86,6 +97,7 @@ void start_new_run()
     reset_player_state_for_spawn();
     game::active_projectiles().clear();
     game::spawn_enemies(maze, TILE_SCALE, playerStartCell, ENEMY_SPAWN_WEIGHTS);
+    init_textures();
 }
 
 //==============================================================
@@ -212,17 +224,6 @@ void draw_maze_floor(float maze_span, int tiles_n)
     glTexCoord2f(repeat,    repeat);     glVertex3f(maze_span, 0.0f, maze_span);
     glTexCoord2f(0.0f,      repeat);     glVertex3f(0.0f,      0.0f, maze_span);
     glEnd();
-}
-
-void init_textures()
-{
-    int idx = 1 + (std::rand() % 3);
-
-    std::string floorPath = "assets/textures/floor" + std::to_string(idx) + ".jpg";
-    std::string wallPath  = "assets/textures/wall"  + std::to_string(idx) + ".jpg";
-
-    globals::floor_texture = load_texture_2d(floorPath);
-    globals::wall_texture  = load_texture_2d(wallPath);
 }
 
 void draw_player_avatar(const game::PlayerMovement & playerState)
