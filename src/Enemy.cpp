@@ -69,15 +69,15 @@ namespace game
         {
             switch (type)
             {
-            case EnemyType::CylinderBot:
-                return CylinderBot();
-            case EnemyType::SphereDrone:
-                return SphereDrone();
-            case EnemyType::CubeTurret:
-                return CubeTurret();
-            case EnemyType::PyramidCharger:
-            default:
-                return PyramidCharger();
+                case EnemyType::CylinderBot:
+                    return CylinderBot();
+                case EnemyType::SphereDrone:
+                    return SphereDrone();
+                case EnemyType::CubeTurret:
+                    return CubeTurret();
+                case EnemyType::PyramidCharger:
+                default:
+                    return PyramidCharger();
             }
         }
 

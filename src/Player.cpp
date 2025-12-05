@@ -151,6 +151,7 @@ namespace game
             state.groundHeight = state.position.y;
             //state.collisionRadius = collisionRadius;
             state.initialized  = true;
+            state.score = 0;
         }
 
         // Movement basis: camera-relative in FPS view, world-relative in top-down

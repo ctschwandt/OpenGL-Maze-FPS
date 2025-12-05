@@ -30,10 +30,10 @@ namespace game
         {
             switch (type)
             {
-            case EnemyType::CylinderBot:   return 100;
-            case EnemyType::SphereDrone:   return 150;
-            case EnemyType::CubeTurret:    return 200;
-            case EnemyType::PyramidCharger:return 175;
+                case EnemyType::CylinderBot:   return 1;
+                case EnemyType::SphereDrone:   return 2;
+                case EnemyType::CubeTurret:    return 2;
+                case EnemyType::PyramidCharger:return 4;
             default:                       return 0;
             }
         };
