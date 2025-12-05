@@ -47,6 +47,47 @@ const float TOP_DOWN_ZOOM_MAX   = 2.0f;
 float       top_down_zoom       = 0.2f;
 const game::EnemySpawnWeights ENEMY_SPAWN_WEIGHTS{ 1.0f, 1.0f, 1.0f, 1.0f };
 
+glm::ivec2 random_start_cell()
+{
+    int start_r = std::rand() % maze.n;
+    int start_c = std::rand() % maze.n;
+    return glm::ivec2(start_r, start_c);
+}
+
+void place_player_at_cell(const glm::ivec2 & cell)
+{
+    float start_x = TILE_SCALE * (2.0f * static_cast<float>(cell.y) + 1.5f);
+    float start_z = TILE_SCALE * (2.0f * static_cast<float>(cell.x) + 1.5f);
+
+    mygllib::View & view = *(mygllib::SingletonView::getInstance());
+    float yaw = static_cast<float>(view.yaw());
+    float eyeOffsetX = std::cos(yaw) * game::PLAYER_RADIUS;
+    float eyeOffsetZ = std::sin(yaw) * game::PLAYER_RADIUS;
+    view.eye(start_x + eyeOffsetX, game::PLAYER_EYE_HEIGHT, start_z + eyeOffsetZ);
+    view.update_center_from_yaw_pitch();
+}
+
+void reset_player_state_for_spawn()
+{
+    game::PlayerMovement & playerState = game::player_movement_state();
+    playerState = game::PlayerMovement();
+    playerState.initialized = false;
+}
+
+void start_new_run()
+{
+    glm::ivec2 playerStartCell = random_start_cell();
+
+    maze.init(playerStartCell.x, playerStartCell.y);
+    maze.print();
+    std::cout << std::endl;
+
+    place_player_at_cell(playerStartCell);
+    reset_player_state_for_spawn();
+    game::active_projectiles().clear();
+    game::spawn_enemies(maze, TILE_SCALE, playerStartCell, ENEMY_SPAWN_WEIGHTS);
+}
+
 //==============================================================
 // Lighting / GL init
 //==============================================================
@@ -562,14 +603,6 @@ int main(int argc, char ** argv)
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
     glfwSwapInterval(0); // turn off v-sync
 
-    // ----- Maze generation (text debug) -----
-    int start_r = std::rand() % maze.n;
-    int start_c = std::rand() % maze.n;
-    glm::ivec2 playerStartCell(start_r, start_c);
-    maze.init(start_r, start_c);
-    maze.print();
-    std::cout << std::endl;
-
     // ----- Create window & GL context -----
     mygllib::WIN_W = 700;
     mygllib::WIN_H = 700;
@@ -595,18 +628,6 @@ int main(int argc, char ** argv)
             mygllib::Reshape::reshape(w, h);
         });
 
-    // Place the camera/player at the center of the chosen start cell
-    {
-        float start_x = TILE_SCALE * (2.0f * static_cast<float>(start_c) + 1.5f);
-        float start_z = TILE_SCALE * (2.0f * static_cast<float>(start_r) + 1.5f);
-
-        mygllib::View & view = *(mygllib::SingletonView::getInstance());
-        float yaw = static_cast<float>(view.yaw());
-        float eyeOffsetX = std::cos(yaw) * game::PLAYER_RADIUS;
-        float eyeOffsetZ = std::sin(yaw) * game::PLAYER_RADIUS;
-        view.eye(start_x + eyeOffsetX, game::PLAYER_EYE_HEIGHT, start_z + eyeOffsetZ);
-    }
-
     init();
 
     try
@@ -620,7 +641,7 @@ int main(int argc, char ** argv)
         return -1;
     }
 
-    game::spawn_enemies(maze, TILE_SCALE, playerStartCell, ENEMY_SPAWN_WEIGHTS);
+    start_new_run();
 
     // ----- Input wrapper (sets cursor disabled + callback inside ctor) -----
     mygllib::GLFWInput input(window);
@@ -652,10 +673,17 @@ int main(int argc, char ** argv)
         game::update_enemies(dt, game::player_movement_state(), maze);
         game::update_projectiles(dt, maze, TILE_SCALE, game::active_enemies(), game::player_movement_state());
 
+        game::PlayerMovement & playerState = game::player_movement_state();
+        if (playerState.health <= 0)
+        {
+            start_new_run();
+            continue;
+        }
+
         if (globals::top_down_view)
         {
             handle_top_down_zoom(input);
-            apply_top_down_view(game::player_movement_state(), view, TILE_SCALE, maze);
+            apply_top_down_view(playerState, view, TILE_SCALE, maze);
         }
         else
         {
