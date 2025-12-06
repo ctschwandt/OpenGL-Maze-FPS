@@ -51,7 +51,7 @@ const game::EnemySpawnWeights ENEMY_SPAWN_WEIGHTS{ 1.0f, 1.0f, 1.0f, 1.0f };
 bool maze_had_enemies = false;
 
 // Visibility mask: 1 = visible, 0 = not visible
-std::vector<std::uint8_t> g_visible_tiles;
+std::vector<std::uint8_t> g_visible_tiles; // switch to bool
 
 const float PI_F = 3.14159265358979323846f;
 
@@ -375,11 +375,15 @@ void draw_maze_floor()
 
 void draw_player_avatar(const game::PlayerMovement & playerState)
 {
-    const float cylinderHeight = game::PLAYER_BODY_HEIGHT;
-    const float cylinderRadius = game::PLAYER_RADIUS;
+    static const float cylinderHeight = game::PLAYER_BODY_HEIGHT;
+    static const float cylinderRadius = game::PLAYER_RADIUS;
 
-    GLfloat emissive[]    = {1.0f, 0.1f, 0.8f, 1.0f};
-    GLfloat emissiveOff[] = {0.0f, 0.0f, 0.0f, 1.0f};
+    static GLfloat emissive[]    = {1.0f, 0.1f, 0.8f, 1.0f};
+    static GLfloat emissiveOff[] = {0.0f, 0.0f, 0.0f, 1.0f};
+
+    // save current enable/disable states
+    glPushAttrib(GL_ENABLE_BIT); 
+    glDisable(GL_CULL_FACE);
 
     glPushMatrix();
     {
@@ -393,6 +397,9 @@ void draw_player_avatar(const game::PlayerMovement & playerState)
         glMaterialfv(GL_FRONT_AND_BACK, GL_EMISSION, emissiveOff);
     }
     glPopMatrix();
+
+    // restore previous state
+    glPopAttrib();
 }
 
 void draw_player_direction_indicator(const game::PlayerMovement & playerState)
