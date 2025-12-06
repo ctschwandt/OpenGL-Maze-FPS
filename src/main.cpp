@@ -13,6 +13,7 @@
 #include <cctype>
 #include <string>
 #include <vector>
+#include <cstdint>
 
 #include "Globals.h"
 #include "Maze.h"
@@ -47,6 +48,16 @@ const float TOP_DOWN_ZOOM_MAX   = 2.0f;
 float       top_down_zoom       = 0.2f;
 const game::EnemySpawnWeights ENEMY_SPAWN_WEIGHTS{ 1.0f, 1.0f, 1.0f, 1.0f };
 
+bool maze_had_enemies = false;
+
+// Visibility mask: 1 = visible, 0 = not visible
+std::vector<std::uint8_t> g_visible_tiles;
+
+const float PI_F = 3.14159265358979323846f;
+
+//==============================================================
+// Helpers
+//==============================================================
 glm::ivec2 random_start_cell()
 {
     int start_r = std::rand() % maze.n;
@@ -56,7 +67,13 @@ glm::ivec2 random_start_cell()
 
 void init_textures()
 {
+    static int prev_idx = 0;
     int idx = 1 + (std::rand() % 3);
+    while (idx == prev_idx)
+    {
+        idx = 1 + (std::rand() % 3);
+    }
+    prev_idx = idx;
 
     std::string floorPath = "assets/textures/floor" + std::to_string(idx) + ".jpg";
     std::string wallPath  = "assets/textures/wall"  + std::to_string(idx) + ".jpg";
@@ -96,8 +113,6 @@ void reset_player_state_for_spawn(bool resetStats)
     playerState.initialized = false;
 }
 
-bool maze_had_enemies = false;
-
 void start_new_run(bool resetPlayerStats = true)
 {
     glm::ivec2 playerStartCell = random_start_cell();
@@ -112,6 +127,95 @@ void start_new_run(bool resetPlayerStats = true)
     game::spawn_enemies(maze, TILE_SCALE, playerStartCell, ENEMY_SPAWN_WEIGHTS);
     maze_had_enemies = !game::active_enemies().empty();
     init_textures();
+}
+
+//==============================================================
+// Visibility helpers (cell-based)
+//==============================================================
+inline bool tile_visible(int tr, int tc)
+{
+    int tileN = maze.tiles_n;
+    if (tr < 0 || tr >= tileN || tc < 0 || tc >= tileN)
+        return false;
+
+    int idx = tr * tileN + tc;
+    if (idx < 0 || idx >= static_cast<int>(g_visible_tiles.size()))
+        return false;
+
+    return g_visible_tiles[idx] != 0;
+}
+
+inline bool world_pos_visible(float x, float z)
+{
+    int tc = static_cast<int>(std::floor(x / TILE_SCALE));
+    int tr = static_cast<int>(std::floor(z / TILE_SCALE));
+    return tile_visible(tr, tc);
+}
+
+//==============================================================
+// Raycasting / Visibility
+//==============================================================
+void compute_visibility_mask(const Maze & maze,
+                             float tileScale,
+                             float maxRayDistance,
+                             const glm::vec3 & origin,
+                             float yaw)
+{
+    int tileN = maze.tiles_n;
+    if (tileN <= 0)
+        return;
+
+    g_visible_tiles.assign(tileN * tileN, 0);
+
+    float eyeX = origin.x;
+    float eyeZ = origin.z;
+
+    // Always mark the player's own cell as visible so it's not hidden
+    int originTc = static_cast<int>(std::floor(eyeX / tileScale));
+    int originTr = static_cast<int>(std::floor(eyeZ / tileScale));
+    if (originTr >= 0 && originTr < tileN && originTc >= 0 && originTc < tileN)
+    {
+        int originIdx = originTr * tileN + originTc;
+        if (originIdx >= 0 && originIdx < static_cast<int>(g_visible_tiles.size()))
+            g_visible_tiles[originIdx] = 1;
+    }
+
+    const int   NUM_RAYS = 720;
+    const float FOV      = PI_F * 0.5f;   // 90 degrees
+    const float HALF_FOV = FOV * 0.5f;
+    const float STEP     = tileScale * 0.25f;
+
+    for (int i = 0; i < NUM_RAYS; ++i)
+    {
+        float t   = (NUM_RAYS == 1) ? 0.5f : (static_cast<float>(i) / (NUM_RAYS - 1));
+        float ang = yaw - HALF_FOV + t * FOV;
+
+        float dirX = std::cos(ang);
+        float dirZ = std::sin(ang);
+
+        float posX = eyeX;
+        float posZ = eyeZ;
+        float traveled = 0.0f;
+
+        while (traveled < maxRayDistance)
+        {
+            posX += dirX * STEP;
+            posZ += dirZ * STEP;
+            traveled += STEP;
+
+            int tc = static_cast<int>(std::floor(posX / tileScale));
+            int tr = static_cast<int>(std::floor(posZ / tileScale));
+
+            if (tr < 0 || tr >= tileN || tc < 0 || tc >= tileN)
+                break;
+
+            int idx = tr * tileN + tc;
+            g_visible_tiles[idx] = 1;
+
+            if (maze.is_wall_tile(tr, tc))
+                break;
+        }
+    }
 }
 
 //==============================================================
@@ -215,6 +319,10 @@ void draw_maze_columns()
             if (!maze.is_wall_tile(tr, tc))
                 continue;
 
+            // If this cell is not visible, draw nothing contained in it
+            if (!tile_visible(tr, tc))
+                continue;
+
             // logical center (before any scaling)
             float cx = tc + 0.5f;
             float cz = tr + 0.5f;
@@ -227,16 +335,39 @@ void draw_maze_columns()
     }
 }
 
-void draw_maze_floor(float maze_span, int tiles_n)
+void draw_maze_floor()
 {
-    float repeat = static_cast<float>(tiles_n);
+    int tileN = maze.tiles_n;
 
     glBegin(GL_QUADS);
     glNormal3f(0.0f, 1.0f, 0.0f);
-    glTexCoord2f(0.0f,      0.0f);       glVertex3f(0.0f,      0.0f, 0.0f);
-    glTexCoord2f(repeat,    0.0f);       glVertex3f(maze_span, 0.0f, 0.0f);
-    glTexCoord2f(repeat,    repeat);     glVertex3f(maze_span, 0.0f, maze_span);
-    glTexCoord2f(0.0f,      repeat);     glVertex3f(0.0f,      0.0f, maze_span);
+
+    for (int tr = 0; tr < tileN; ++tr)
+    {
+        for (int tc = 0; tc < tileN; ++tc)
+        {
+            // Only draw floor for visible cells
+            if (!tile_visible(tr, tc))
+                continue;
+
+            float x0 = static_cast<float>(tc);
+            float x1 = x0 + 1.0f;
+            float z0 = static_cast<float>(tr);
+            float z1 = z0 + 1.0f;
+
+            // Texture coords: tile the texture across the maze
+            float u0 = static_cast<float>(tc);
+            float u1 = static_cast<float>(tc + 1);
+            float v0 = static_cast<float>(tr);
+            float v1 = static_cast<float>(tr + 1);
+
+            glTexCoord2f(u0, v0); glVertex3f(x0, 0.0f, z0);
+            glTexCoord2f(u1, v0); glVertex3f(x1, 0.0f, z0);
+            glTexCoord2f(u1, v1); glVertex3f(x1, 0.0f, z1);
+            glTexCoord2f(u0, v1); glVertex3f(x0, 0.0f, z1);
+        }
+    }
+
     glEnd();
 }
 
@@ -307,6 +438,10 @@ void draw_projectiles(const std::vector<game::Projectile> & projectiles)
     glColor3f(1.0f, 0.9f, 0.2f);
     for (const auto & p : projectiles)
     {
+        // If the projectile's cell is not visible, draw nothing
+        if (!world_pos_visible(p.position.x, p.position.z))
+            continue;
+
         draw_textured_box(p.position.x, p.position.y, p.position.z,
                           radius, radius, radius);
     }
@@ -551,25 +686,23 @@ void display()
 
     glLineWidth(1.0f);
 
-    float maze_span = TILE_SCALE * maze.tiles_n;
+    // ----- Maze floor (textured, unlit, per visible cell) -----
+    glPushAttrib(GL_LIGHTING_BIT | GL_ENABLE_BIT);
 
-    // ----- Maze floor (textured, unlit) -----
-    if (globals::draw_plane)
-    {
-        glPushAttrib(GL_LIGHTING_BIT | GL_ENABLE_BIT);
+    glDisable(GL_LIGHTING);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, globals::floor_texture);
 
-        glDisable(GL_LIGHTING);
-        glEnable(GL_TEXTURE_2D);
-        glBindTexture(GL_TEXTURE_2D, globals::floor_texture);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glColor3f(1.0f, 1.0f, 1.0f); // no tint
 
-        glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-        glColor3f(1.0f, 1.0f, 1.0f); // no tint
+    glPushMatrix();
+    glScalef(TILE_SCALE, TILE_SCALE, TILE_SCALE);  // go from tile-space to world-space
+    draw_maze_floor();
+    glPopMatrix();
 
-        draw_maze_floor(maze_span, maze.tiles_n);
-
-        glBindTexture(GL_TEXTURE_2D, 0);
-        glPopAttrib(); // restores lighting + enable states
-    }
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glPopAttrib(); // restores lighting + enable states
 
     // ----- Axes -----
     if (globals::draw_axes)
@@ -598,11 +731,23 @@ void display()
     }
     glPopMatrix();
 
-    // ----- Player, enemies, projectiles (still use lighting setup) -----
+    // ----- Player, enemies, projectiles -----
     draw_player_avatar(game::player_movement_state());
     if (globals::top_down_view)
         draw_player_direction_indicator(game::player_movement_state());
-    game::draw_enemies(game::active_enemies());
+
+    // draw enemies if visible
+    // for some reason commenting this out makes it to where no
+    // floors are drawn???
+    const auto & enemies = game::active_enemies();
+    for (const auto & enemy : enemies)
+    {
+        if (!world_pos_visible(enemy.pos.x, enemy.pos.z))
+            continue;
+
+        enemy.draw();
+    }    
+
     draw_projectiles(game::active_projectiles());
 
     draw_health_bar(game::player_movement_state());
@@ -616,7 +761,7 @@ int main(int argc, char ** argv)
     (void)argc;
     (void)argv;
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
-    glfwSwapInterval(0); // turn off v-sync
+    glfwSwapInterval(1); // turn on v-sync
 
     // ----- Create window & GL context -----
     mygllib::WIN_W = 700;
@@ -684,6 +829,7 @@ int main(int argc, char ** argv)
         handle_function_keys(input);
         mygllib::Mouse::update_from_input(input);
         mygllib::Keyboard::update_from_input(input, dt);
+
         game::update_player_movement(input, dt, view, maze, TILE_SCALE);
         game::update_enemies(dt, game::player_movement_state(), maze);
         game::update_projectiles(dt, maze, TILE_SCALE, game::active_enemies(), game::player_movement_state());
@@ -701,6 +847,7 @@ int main(int argc, char ** argv)
             continue;
         }
 
+        // Update camera
         if (globals::top_down_view)
         {
             handle_top_down_zoom(input);
@@ -711,6 +858,31 @@ int main(int argc, char ** argv)
             view.up(0.0f, 1.0f, 0.0f);
             view.update_center_from_yaw_pitch();
         }
+
+        // 4.5) Compute raycast visibility from the player's position
+        glm::vec3 origin = playerState.position;
+        float rayYaw = 0.0f;
+
+        if (globals::top_down_view)
+        {
+            glm::vec3 dir = playerState.facingDirection;
+            if (glm::length2(dir) > 0.0f)
+            {
+                dir = glm::normalize(glm::vec3(dir.x, 0.0f, dir.z));
+                rayYaw = std::atan2(dir.z, dir.x);
+            }
+            else
+            {
+                rayYaw = static_cast<float>(view.yaw());
+            }
+        }
+        else
+        {
+            rayYaw = static_cast<float>(view.yaw());
+        }
+
+        float mazeSpan = TILE_SCALE * static_cast<float>(maze.tiles_n);
+        compute_visibility_mask(maze, TILE_SCALE, mazeSpan, origin, rayYaw);
 
         // 5) Render
         display();

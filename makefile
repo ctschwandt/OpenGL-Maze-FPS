@@ -20,7 +20,7 @@ $(BUILD_DIR)/%.o: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
-.PHONY: clean c run r asan asanr
+.PHONY: clean c run r asan asanr profile profiler
 
 r run: $(TARGET)
 	$(TARGET)
@@ -34,3 +34,10 @@ asan: clean $(TARGET)
 
 asanr: asan
 	$(TARGET)
+
+profile profiler: CXXFLAGS += -pg
+profile profiler: LDFLAGS  += -pg
+profile profiler: clean $(TARGET)
+	$(TARGET)
+	gprof $(TARGET) gmon.out > $(BUILD_DIR)/profile.txt
+	@echo "Wrote gprof output to $(BUILD_DIR)/profile.txt"

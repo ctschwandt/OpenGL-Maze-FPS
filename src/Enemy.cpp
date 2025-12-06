@@ -335,24 +335,24 @@ namespace game
     {
         switch (type_)
         {
-        case EnemyType::CylinderBot:
-        {
-            glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT);
-            glDisable(GL_LIGHTING);
-            glDisable(GL_CULL_FACE);
+            case EnemyType::CylinderBot:
+            {
+                glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT);
+                glDisable(GL_LIGHTING);
+                glDisable(GL_CULL_FACE);
 
-            glPushMatrix();
-            glTranslatef(pos.x, pos.y + (height * 0.5f), pos.z);
-            glRotatef(yaw * 180.0f / static_cast<float>(M_PI), 0.0f, 1.0f, 0.0f);
+                glPushMatrix();
+                glTranslatef(pos.x, pos.y + (height * 0.5f), pos.z);
+                glRotatef(yaw * 180.0f / static_cast<float>(M_PI), 0.0f, 1.0f, 0.0f);
 
-            glColor3f(0.2f, 0.6f, 1.0f);
-            draw_cylinder(radius, height, 24);
+                glColor3f(0.2f, 0.6f, 1.0f);
+                draw_cylinder(radius, height, 24);
 
-            glPopMatrix();
+                glPopMatrix();
 
-            glPopAttrib();
-            break;
-        }
+                glPopAttrib();
+                break;
+            }
 
         case EnemyType::SphereDrone:
         case EnemyType::CubeTurret:
