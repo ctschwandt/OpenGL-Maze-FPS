@@ -12,4 +12,11 @@ namespace globals
 
     GLuint floor_texture = 0;
     GLuint wall_texture = 0;
+
+    GLuint robert_texture = 0;
+
+    GameState game_state = GameState::MAZE;
+
+    float robert_rot_x = 0.0f;
+    float robert_rot_y = 0.0f;
 }
