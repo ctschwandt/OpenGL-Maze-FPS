@@ -361,10 +361,10 @@ void draw_maze_floor()
             float v0 = static_cast<float>(tr);
             float v1 = static_cast<float>(tr + 1);
 
-            glTexCoord2f(u0, v0); glVertex3f(x0, 0.0f, z0);
-            glTexCoord2f(u1, v0); glVertex3f(x1, 0.0f, z0);
-            glTexCoord2f(u1, v1); glVertex3f(x1, 0.0f, z1);
-            glTexCoord2f(u0, v1); glVertex3f(x0, 0.0f, z1);
+            glTexCoord2f(u0, v0); glVertex3f(x0, 0.0f, z0); // TL
+            glTexCoord2f(u0, v1); glVertex3f(x0, 0.0f, z1); // BL
+            glTexCoord2f(u1, v1); glVertex3f(x1, 0.0f, z1); // BR
+            glTexCoord2f(u1, v0); glVertex3f(x1, 0.0f, z0); // TR
         }
     }
 
@@ -736,9 +736,6 @@ void display()
     if (globals::top_down_view)
         draw_player_direction_indicator(game::player_movement_state());
 
-    // draw enemies if visible
-    // for some reason commenting this out makes it to where no
-    // floors are drawn???
     const auto & enemies = game::active_enemies();
     for (const auto & enemy : enemies)
     {

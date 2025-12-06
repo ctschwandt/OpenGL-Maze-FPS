@@ -337,7 +337,8 @@ namespace game
         {
             case EnemyType::CylinderBot:
             {
-                glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT);
+                glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT | GL_ENABLE_BIT);
+                
                 glDisable(GL_LIGHTING);
                 glDisable(GL_CULL_FACE);
 
