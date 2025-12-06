@@ -246,6 +246,8 @@ void init()
     glFrontFace(GL_CCW);
 
     glEnable(GL_TEXTURE_2D);
+
+    globals::robert_texture = load_texture_2d("assets/textures/robert.png");
 }
 
 //==============================================================
@@ -644,11 +646,20 @@ void handle_function_keys(const mygllib::GLFWInput &input)
     static bool f2_down_previous = false;
     static bool f3_down_previous = false;
     static bool f4_down_previous = false;
+    static bool f5_down_previous = false;
+
+    static bool has_saved_view    = false;
+    static glm::vec3 saved_eye    = glm::vec3(0.0f);
+    static glm::vec3 saved_ref    = glm::vec3(0.0f);
+    static glm::vec3 saved_up     = glm::vec3(0.0f);
+    static float     saved_yaw    = 0.0f;
+    static float     saved_pitch  = 0.0f;
 
     bool f1_down = input.key_down(GLFW_KEY_F1);
     bool f2_down = input.key_down(GLFW_KEY_F2);
     bool f3_down = input.key_down(GLFW_KEY_F3);
     bool f4_down = input.key_down(GLFW_KEY_F4);
+    bool f5_down = input.key_down(GLFW_KEY_F5);
 
     if (f1_down && !f1_down_previous)
     {
@@ -667,10 +678,50 @@ void handle_function_keys(const mygllib::GLFWInput &input)
         globals::top_down_view = !globals::top_down_view;
     }
 
+    if (f5_down && !f5_down_previous)
+    {
+        mygllib::View & view = *(mygllib::SingletonView::getInstance());
+
+        if (globals::game_state == globals::GameState::MAZE)
+        {
+            saved_eye   = glm::vec3(view.eyex(), view.eyey(), view.eyez());
+            saved_ref   = glm::vec3(view.refx(), view.refy(), view.refz());
+            saved_up    = glm::vec3(view.upx(), view.upy(), view.upz());
+            saved_yaw   = view.yaw();
+            saved_pitch = view.pitch();
+            has_saved_view = true;
+
+            globals::robert_rot_x = 0.0f;
+            globals::robert_rot_y = 0.0f;
+
+            view.eye(0.0f, 0.0f, 5.0f);
+            view.ref(0.0f, 0.0f, 0.0f);
+            view.up(0.0f, 1.0f, 0.0f);
+            view.yaw() = 0.0f;
+            view.pitch() = 0.0f;
+        }
+        else
+        {
+            if (has_saved_view)
+            {
+                view.eye(saved_eye.x, saved_eye.y, saved_eye.z);
+                view.ref(saved_ref.x, saved_ref.y, saved_ref.z);
+                view.up(saved_up.x, saved_up.y, saved_up.z);
+                view.yaw() = saved_yaw;
+                view.pitch() = saved_pitch;
+            }
+        }
+
+        globals::game_state = (globals::game_state == globals::GameState::MAZE)
+            ? globals::GameState::ROBERT_CUBE
+            : globals::GameState::MAZE;
+    }
+
     f1_down_previous = f1_down;
     f2_down_previous = f2_down;
     f3_down_previous = f3_down;
     f4_down_previous = f4_down;
+    f5_down_previous = f5_down;
 }
 
 //==============================================================
@@ -678,6 +729,33 @@ void handle_function_keys(const mygllib::GLFWInput &input)
 //==============================================================
 void display()
 {
+    if (globals::game_state == globals::GameState::ROBERT_CUBE)
+    {
+        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glMatrixMode(GL_MODELVIEW);
+        glLoadIdentity();
+        mygllib::SingletonView::getInstance()->lookat();
+
+        glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_COLOR_BUFFER_BIT);
+        glDisable(GL_LIGHTING);
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, globals::robert_texture);
+        glColor3f(1.0f, 1.0f, 1.0f);
+
+        glPushMatrix();
+        glRotatef(globals::robert_rot_x, 1.0f, 0.0f, 0.0f);
+        glRotatef(globals::robert_rot_y, 0.0f, 1.0f, 0.0f);
+        draw_textured_box(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
+        glPopMatrix();
+
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glPopAttrib();
+        return;
+    }
+
+    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
@@ -743,7 +821,7 @@ void display()
             continue;
 
         enemy.draw();
-    }    
+    }
 
     draw_projectiles(game::active_projectiles());
 
@@ -824,62 +902,68 @@ int main(int argc, char ** argv)
 
         // 4) Handle input & game updates
         handle_function_keys(input);
-        mygllib::Mouse::update_from_input(input);
+        if (globals::game_state == globals::GameState::MAZE)
+        {
+            mygllib::Mouse::update_from_input(input);
+        }
         mygllib::Keyboard::update_from_input(input, dt);
 
-        game::update_player_movement(input, dt, view, maze, TILE_SCALE);
-        game::update_enemies(dt, game::player_movement_state(), maze);
-        game::update_projectiles(dt, maze, TILE_SCALE, game::active_enemies(), game::player_movement_state());
-
-        game::PlayerMovement & playerState = game::player_movement_state();
-        if (playerState.health <= 0)
+        if (globals::game_state == globals::GameState::MAZE)
         {
-            start_new_run();
-            continue;
-        }
+            game::update_player_movement(input, dt, view, maze, TILE_SCALE);
+            game::update_enemies(dt, game::player_movement_state(), maze);
+            game::update_projectiles(dt, maze, TILE_SCALE, game::active_enemies(), game::player_movement_state());
 
-        if (maze_had_enemies && game::active_enemies().empty())
-        {
-            start_new_run(false);
-            continue;
-        }
-
-        // Update camera
-        if (globals::top_down_view)
-        {
-            handle_top_down_zoom(input);
-            apply_top_down_view(playerState, view, TILE_SCALE, maze);
-        }
-        else
-        {
-            view.up(0.0f, 1.0f, 0.0f);
-            view.update_center_from_yaw_pitch();
-        }
-
-        // 4.5) Compute raycast visibility from the player's position
-        glm::vec3 origin = playerState.position;
-        float rayYaw = 0.0f;
-
-        if (globals::top_down_view)
-        {
-            glm::vec3 dir = playerState.facingDirection;
-            if (glm::length2(dir) > 0.0f)
+            game::PlayerMovement & playerState = game::player_movement_state();
+            if (playerState.health <= 0)
             {
-                dir = glm::normalize(glm::vec3(dir.x, 0.0f, dir.z));
-                rayYaw = std::atan2(dir.z, dir.x);
+                start_new_run();
+                continue;
+            }
+
+            if (maze_had_enemies && game::active_enemies().empty())
+            {
+                start_new_run(false);
+                continue;
+            }
+
+            // Update camera
+            if (globals::top_down_view)
+            {
+                handle_top_down_zoom(input);
+                apply_top_down_view(playerState, view, TILE_SCALE, maze);
+            }
+            else
+            {
+                view.up(0.0f, 1.0f, 0.0f);
+                view.update_center_from_yaw_pitch();
+            }
+
+            // 4.5) Compute raycast visibility from the player's position
+            glm::vec3 origin = playerState.position;
+            float rayYaw = 0.0f;
+
+            if (globals::top_down_view)
+            {
+                glm::vec3 dir = playerState.facingDirection;
+                if (glm::length2(dir) > 0.0f)
+                {
+                    dir = glm::normalize(glm::vec3(dir.x, 0.0f, dir.z));
+                    rayYaw = std::atan2(dir.z, dir.x);
+                }
+                else
+                {
+                    rayYaw = static_cast<float>(view.yaw());
+                }
             }
             else
             {
                 rayYaw = static_cast<float>(view.yaw());
             }
-        }
-        else
-        {
-            rayYaw = static_cast<float>(view.yaw());
-        }
 
-        float mazeSpan = TILE_SCALE * static_cast<float>(maze.tiles_n);
-        compute_visibility_mask(maze, TILE_SCALE, mazeSpan, origin, rayYaw);
+            float mazeSpan = TILE_SCALE * static_cast<float>(maze.tiles_n);
+            compute_visibility_mask(maze, TILE_SCALE, mazeSpan, origin, rayYaw);
+        }
 
         // 5) Render
         display();

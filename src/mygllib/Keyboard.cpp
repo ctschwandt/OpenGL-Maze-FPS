@@ -29,6 +29,30 @@ void mygllib::Keyboard::update_from_input(const GLFWInput & input, float dt)
         glfwSetWindowShouldClose(input.window(), GLFW_TRUE);
     }
 
+    if (globals::game_state == globals::GameState::ROBERT_CUBE)
+    {
+        const float ROT_SPEED_DEG = 90.0f; // degrees per second
+
+        if (input.key_down(GLFW_KEY_RIGHT))
+        {
+            globals::robert_rot_y += ROT_SPEED_DEG * dt;
+        }
+        if (input.key_down(GLFW_KEY_LEFT))
+        {
+            globals::robert_rot_y -= ROT_SPEED_DEG * dt;
+        }
+        if (input.key_down(GLFW_KEY_UP))
+        {
+            globals::robert_rot_x += ROT_SPEED_DEG * dt;
+        }
+        if (input.key_down(GLFW_KEY_DOWN))
+        {
+            globals::robert_rot_x -= ROT_SPEED_DEG * dt;
+        }
+
+        return;
+    }
+
     if (globals::top_down_view)
         return;
 
