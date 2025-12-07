@@ -108,26 +108,7 @@ float fbm(vec2 p)
 }
 
 // ---- Palettes ----
-
-// 0: Red / black — dark volcanic red
-vec3 palette_red(float t)
-{
-    float x = t;
-    vec3 a = vec3(0.05, 0.0, 0.0);  // dark red base
-    vec3 b = vec3(0.95, 0.0, 0.0);  // variation only in red
-    vec3 c = vec3(1.0, 1.0, 1.0);
-    vec3 d = vec3(0.0, 0.0, 0.0);
-    return a + b * cos(6.28318 * (c * x + d));
-}
-
-// 1: Grayscale
-vec3 palette_gray(float t)
-{
-    float x = clamp(t, 0.0, 1.0);
-    return vec3(x);
-}
-
-// 2: Night thunder (what you already had)
+// 0: Night thunder
 vec3 palette_night_thunder(float t)
 {
     t = clamp(t, 0.0, 1.0);
@@ -143,20 +124,7 @@ vec3 palette_night_thunder(float t)
     return         mix(teal,        flash,    (x - 0.75) / 0.25);
 }
 
-// 3: Lava orange — hotter, more orange sky
-vec3 palette_lava_orange(float t)
-{
-    float x = clamp(t, 0.0, 1.0);
-    vec3 deep = vec3(0.02, 0.0, 0.0);
-    vec3 mid  = vec3(0.5, 0.1, 0.0);
-    vec3 hot  = vec3(1.0, 0.6, 0.0);
-
-    if (x < 0.4)  return mix(deep, mid,  x / 0.4);
-    if (x < 0.8)  return mix(mid,  hot, (x - 0.4) / 0.4);
-    return         mix(hot, vec3(1.0, 1.0, 1.0), (x - 0.8) / 0.2);
-}
-
-// 4: Smoky ash — dark, desaturated, good for “burned” feel
+// 1: Smoky ash
 vec3 palette_smoke(float t)
 {
     float x = clamp(t, 0.0, 1.0);
@@ -168,20 +136,7 @@ vec3 palette_smoke(float t)
     return        mix(mid,    top, (x - 0.5) / 0.5);
 }
 
-// 5: Hellfire purple — red with a bit of magenta glow
-vec3 palette_hell_purple(float t)
-{
-    float x = clamp(t, 0.0, 1.0);
-    vec3 dark   = vec3(0.02, 0.0, 0.05);
-    vec3 mid    = vec3(0.4, 0.0, 0.2);
-    vec3 bright = vec3(1.0, 0.0, 0.4);
-
-    if (x < 0.4)  return mix(dark,   mid,    x / 0.4);
-    if (x < 0.8)  return mix(mid,    bright, (x - 0.4) / 0.4);
-    return         mix(bright, vec3(1.0, 0.7, 0.9), (x - 0.8) / 0.2);
-}
-
-// Blue sky with cloud highlights — smooth and bright
+// 2: light blue sky with clouds
 vec3 palette_sky_clouds(float t)
 {
     t = clamp(t, 0.0, 1.0);
@@ -205,14 +160,9 @@ vec3 palette_sky_clouds(float t)
 
 vec3 palette(float t, int index)
 {
-    if      (index == 0) return palette_red(t);
-    else if (index == 1) return palette_gray(t);
-    else if (index == 2) return palette_night_thunder(t);
-    else if (index == 3) return palette_lava_orange(t);
-    else if (index == 4) return palette_smoke(t);
-    else if (index == 5) return palette_hell_purple(t);
-    else if (index == 6) return palette_sky_clouds(t);
-    return palette_red(t);
+    if (index == 0) return palette_night_thunder(t);
+    else if (index == 1) return palette_smoke(t);
+    else return palette_sky_clouds(t); // index == 2
 }
 
 void main()
@@ -640,9 +590,9 @@ int get_palette_index(int idx)
 {
     switch (idx)
     {
-        case 1: return 2; // grayscale
-        case 2: return 4; // red
-        case 3: return 6; // night thunder
+        case 1: return 0; // night thunder
+        case 2: return 1; // smoky ash 
+        case 3: return 2; // sky
         default:
             return -1;
     }
@@ -667,7 +617,7 @@ void init_textures()
     // Map to palette
     g_worldbox_palette_index = get_palette_index(idx);
 
-    g_worldbox_useDiamond = (idx == 2 || (idx == 1 && rand() % 2 == 0));
+    g_worldbox_useDiamond = idx == 2 || (idx == 1 && rand() % 2 == 0);
 }
 
 void place_player_at_cell(const glm::ivec2 & cell)
@@ -1560,7 +1510,7 @@ int main(int argc, char ** argv)
         if (globals::game_state == globals::GameState::MAZE)
         {
             game::update_player_movement(input, dt, view, maze, TILE_SCALE);
-            game::update_enemies(dt, game::player_movement_state(), maze);
+            //game::update_enemies(dt, game::player_movement_state(), maze);
             game::update_projectiles(dt, maze, TILE_SCALE,
                                      game::active_enemies(),
                                      game::player_movement_state());
