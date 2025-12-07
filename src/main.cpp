@@ -28,6 +28,7 @@
 #include "mygllib/Light.h"
 #include "myglm.h"
 #include "Draw.h"
+#include "Audio.h"
 #include "Enemy.h"
 #include "Player.h"
 #include "Projectile.h"
@@ -1449,6 +1450,15 @@ int main(int argc, char ** argv)
         return -1;
     }
 
+    if (!audio::init())
+    {
+        std::cerr << "Failed to initialize audio. Music will be disabled." << std::endl;
+    }
+    else
+    {
+        audio::play_music("assets/audio/aphex_twin_3.mp3", true);
+    }
+
     start_new_run();
 
     mygllib::GLFWInput input(window);
@@ -1569,6 +1579,7 @@ int main(int argc, char ** argv)
         glfwSwapBuffers(window);
     }
 
+    audio::shutdown();
     glfwTerminate();
     return 0;
 }
