@@ -38,7 +38,578 @@
 #include <glm/gtx/norm.hpp>
 
 //==============================================================
-// Globals
+// Worldbox sphere shaders (GLSL 1.20, compatibility profile)
+//==============================================================
+
+static const char *g_worldbox_vs = R"(#version 120
+varying vec3 vDir;
+
+void main()
+{
+    // Position in clip space using fixed-function matrices.
+    gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+
+    // Direction from sphere center (assumed at origin in world space).
+    vDir = normalize(gl_Vertex.xyz);
+}
+)";
+
+static const char *g_worldbox_fs = R"(#version 120
+varying vec3 vDir;
+
+uniform float uTime;
+uniform int   uPaletteIndex;
+
+// 0 = fBm / plasma, 1 = Diamond–Square heightmap
+uniform int   uUseDiamond;
+uniform sampler2D uDiamondTex1;
+uniform sampler2D uDiamondTex2;
+uniform float uBlend; // [0,1] blend between DS textures
+
+// --- noise helpers for fBm ---
+
+float hash(vec2 p)
+{
+    const vec2 k = vec2(127.1, 311.7);
+    float h = dot(p, k);
+    return fract(sin(h) * 43758.5453123);
+}
+
+float smoothNoise(vec2 p)
+{
+    vec2 i = floor(p);
+    vec2 f = fract(p);
+
+    float a = hash(i);
+    float b = hash(i + vec2(1.0, 0.0));
+    float c = hash(i + vec2(0.0, 1.0));
+    float d = hash(i + vec2(1.0, 1.0));
+
+    vec2 u = f * f * (3.0 - 2.0 * f);
+
+    return mix(mix(a, b, u.x),
+               mix(c, d, u.x), u.y);
+}
+
+float fbm(vec2 p)
+{
+    float value     = 0.0;
+    float amplitude = 0.5;
+    float frequency = 1.0;
+
+    for (int i = 0; i < 6; ++i)
+    {
+        value     += amplitude * smoothNoise(p * frequency);
+        frequency *= 2.0;
+        amplitude *= 0.5;
+    }
+
+    return value;
+}
+
+// ---- Palettes ----
+
+// 0: Red / black — dark volcanic red
+vec3 palette_red(float t)
+{
+    float x = t;
+    vec3 a = vec3(0.05, 0.0, 0.0);  // dark red base
+    vec3 b = vec3(0.95, 0.0, 0.0);  // variation only in red
+    vec3 c = vec3(1.0, 1.0, 1.0);
+    vec3 d = vec3(0.0, 0.0, 0.0);
+    return a + b * cos(6.28318 * (c * x + d));
+}
+
+// 1: Grayscale
+vec3 palette_gray(float t)
+{
+    float x = clamp(t, 0.0, 1.0);
+    return vec3(x);
+}
+
+// 2: Night thunder (what you already had)
+vec3 palette_night_thunder(float t)
+{
+    t = clamp(t, 0.0, 1.0);
+    float x = pow(t, 1.5);
+
+    vec3 almostBlack = vec3(0.0, 0.0, 0.02);
+    vec3 darkBlue    = vec3(0.02, 0.05, 0.15);
+    vec3 teal        = vec3(0.0,  0.5,  0.6);
+    vec3 flash       = vec3(0.95, 0.97, 1.0);
+
+    if (x < 0.4)  return mix(almostBlack, darkBlue, x / 0.4);
+    if (x < 0.75) return mix(darkBlue,    teal,     (x - 0.4) / 0.35);
+    return         mix(teal,        flash,    (x - 0.75) / 0.25);
+}
+
+// 3: Lava orange — hotter, more orange sky
+vec3 palette_lava_orange(float t)
+{
+    float x = clamp(t, 0.0, 1.0);
+    vec3 deep = vec3(0.02, 0.0, 0.0);
+    vec3 mid  = vec3(0.5, 0.1, 0.0);
+    vec3 hot  = vec3(1.0, 0.6, 0.0);
+
+    if (x < 0.4)  return mix(deep, mid,  x / 0.4);
+    if (x < 0.8)  return mix(mid,  hot, (x - 0.4) / 0.4);
+    return         mix(hot, vec3(1.0, 1.0, 1.0), (x - 0.8) / 0.2);
+}
+
+// 4: Smoky ash — dark, desaturated, good for “burned” feel
+vec3 palette_smoke(float t)
+{
+    float x = clamp(t, 0.0, 1.0);
+    vec3 bottom = vec3(0.0, 0.0, 0.0);
+    vec3 mid    = vec3(0.12, 0.12, 0.12);
+    vec3 top    = vec3(0.4, 0.4, 0.4);
+
+    if (x < 0.5) return mix(bottom, mid, x / 0.5);
+    return        mix(mid,    top, (x - 0.5) / 0.5);
+}
+
+// 5: Hellfire purple — red with a bit of magenta glow
+vec3 palette_hell_purple(float t)
+{
+    float x = clamp(t, 0.0, 1.0);
+    vec3 dark   = vec3(0.02, 0.0, 0.05);
+    vec3 mid    = vec3(0.4, 0.0, 0.2);
+    vec3 bright = vec3(1.0, 0.0, 0.4);
+
+    if (x < 0.4)  return mix(dark,   mid,    x / 0.4);
+    if (x < 0.8)  return mix(mid,    bright, (x - 0.4) / 0.4);
+    return         mix(bright, vec3(1.0, 0.7, 0.9), (x - 0.8) / 0.2);
+}
+
+// Blue sky with cloud highlights — smooth and bright
+vec3 palette_sky_clouds(float t)
+{
+    t = clamp(t, 0.0, 1.0);
+
+    // Sky blue base gradient
+    vec3 skyBottom = vec3(0.20, 0.40, 0.85);  // deeper blue
+    vec3 skyTop    = vec3(0.55, 0.75, 1.00);  // lighter blue
+
+    // Cloud layer — soft white, slightly tinted
+    vec3 cloudColor = vec3(1.00, 1.00, 1.00);
+
+    // Smoothstep gives the cloud puff softness
+    float cloudMask = smoothstep(0.55, 1.0, t);
+
+    // First blend sky vertical gradient
+    vec3 sky = mix(skyBottom, skyTop, t);
+
+    // Then add clouds on top
+    return mix(sky, cloudColor, cloudMask * 0.85); // 0.85 = how bright clouds get
+}
+
+vec3 palette(float t, int index)
+{
+    if      (index == 0) return palette_red(t);
+    else if (index == 1) return palette_gray(t);
+    else if (index == 2) return palette_night_thunder(t);
+    else if (index == 3) return palette_lava_orange(t);
+    else if (index == 4) return palette_smoke(t);
+    else if (index == 5) return palette_hell_purple(t);
+    else if (index == 6) return palette_sky_clouds(t);
+    return palette_red(t);
+}
+
+void main()
+{
+    vec3 dir = normalize(vDir);
+    float t;
+
+    if (uUseDiamond == 0)
+    {
+        // --- fBm / plasma mode ---
+        vec2 p = dir.xz * 4.0;
+        float time = uTime * 0.25;
+
+        float n    = fbm(p + vec2(time * 0.7,  time * 0.5));
+        float warp = fbm(p * 2.5 + vec2(-time * 0.3, time * 0.2));
+        t          = n + 0.5 * warp;   // ~[0,2]
+
+        // Normalize to [0,1] with a bit of contrast
+        t = (t - 0.5) * 0.8 + 0.5;
+        t = clamp(t, 0.0, 1.0);
+    }
+    else
+    {
+        // --- Diamond–Square heightmap mode ---
+        const float PI = 3.14159265;
+
+        // Rotate sampling direction to move seam/poles to less noticeable locations
+        mat3 rotX = mat3(
+            1.0, 0.0,  0.0,
+            0.0, 0.0, -1.0,
+            0.0, 1.0,  0.0
+        );
+        vec3 dirMap = rotX * dir;
+
+        float u = atan(dirMap.z, dirMap.x) / (2.0 * PI) + 0.5;
+        float v = acos(clamp(dirMap.y, -1.0, 1.0)) / PI;
+        vec2 uv = vec2(u, v);
+
+        float h1 = texture2D(uDiamondTex1, uv).r;
+        float h2 = texture2D(uDiamondTex2, uv).r;
+        float h  = mix(h1, h2, clamp(uBlend, 0.0, 1.0));
+
+        t = clamp(h, 0.0, 1.0);
+    }
+
+    vec3 color = palette(t, uPaletteIndex);
+    gl_FragColor = vec4(color, 1.0);
+}
+)";
+
+//==============================================================
+// Shader helpers for worldbox
+//==============================================================
+
+GLuint g_worldbox_program      = 0;
+GLint  g_worldbox_uTime        = -1;
+GLint  g_worldbox_uPalette     = -1;
+GLint  g_worldbox_uUseDiamond  = -1;
+GLint  g_worldbox_uDiamondTex1 = -1;
+GLint  g_worldbox_uDiamondTex2 = -1;
+GLint  g_worldbox_uBlend       = -1;
+
+float  g_world_time_sec        = 0.0f;
+int    g_worldbox_palette_index = 2;   // 0=red,1=gray,2=night thunder
+int    g_worldbox_useDiamond    = 0;   // 0 = fBm, 1 = Diamond-Square
+
+// Diamond–Square textures for the worldbox
+GLuint g_worldbox_heightTexA = 0;
+GLuint g_worldbox_heightTexB = 0;
+int    g_worldbox_hmN        = 0;
+float  g_worldbox_blend      = 0.0f;
+float  g_worldbox_blendSpeed = 0.5f;
+
+// DS generation params
+int   g_worldbox_n_exp = 8;    // 2^8 + 1 = 257
+float g_worldbox_M     = 1.0f;
+float g_worldbox_r     = 0.7f;
+
+static std::vector<float> g_worldbox_heightData;
+
+static GLuint compileShader(GLenum type, const char *src)
+{
+    GLuint shader = glCreateShader(type);
+    glShaderSource(shader, 1, &src, nullptr);
+    glCompileShader(shader);
+
+    GLint status = GL_FALSE;
+    glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
+    if (status != GL_TRUE)
+    {
+        GLint logLen = 0;
+        glGetShaderiv(shader, GL_INFO_LOG_LENGTH, &logLen);
+        std::string log(logLen, '\0');
+        glGetShaderInfoLog(shader, logLen, nullptr, log.data());
+        std::cerr << "Shader compilation failed:\n" << log << std::endl;
+        glDeleteShader(shader);
+        return 0;
+    }
+    return shader;
+}
+
+static GLuint createProgram(const char *vsSrc, const char *fsSrc)
+{
+    GLuint vs = compileShader(GL_VERTEX_SHADER, vsSrc);
+    GLuint fs = compileShader(GL_FRAGMENT_SHADER, fsSrc);
+    if (!vs || !fs)
+        return 0;
+
+    GLuint prog = glCreateProgram();
+    glAttachShader(prog, vs);
+    glAttachShader(prog, fs);
+    glLinkProgram(prog);
+
+    glDeleteShader(vs);
+    glDeleteShader(fs);
+
+    GLint status = GL_FALSE;
+    glGetProgramiv(prog, GL_LINK_STATUS, &status);
+    if (status != GL_TRUE)
+    {
+        GLint logLen = 0;
+        glGetProgramiv(prog, GL_INFO_LOG_LENGTH, &logLen);
+        std::string log(logLen, '\0');
+        glGetProgramInfoLog(prog, logLen, nullptr, log.data());
+        std::cerr << "Program link failed:\n" << log << std::endl;
+        glDeleteProgram(prog);
+        return 0;
+    }
+
+    return prog;
+}
+
+//==============================================================
+// Diamond–Square heightmap for worldbox
+//==============================================================
+
+static float ds_random_in_range(float max_range)
+{
+    float r = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX); // [0,1]
+    float centered = r * 2.0f - 1.0f; // [-1,1]
+    return centered * max_range;
+}
+
+static inline int ds_idx(int x, int z, int N)
+{
+    return z * N + x;
+}
+
+static float ds_average_cardinal(const std::vector<float> &map,
+                                 int i, int j, int half, int N)
+{
+    float sum = 0.0f;
+    int count = 0;
+
+    if (j - half >= 0)
+    {
+        sum += map[ds_idx(i, j - half, N)];
+        ++count;
+    }
+    if (j + half < N)
+    {
+        sum += map[ds_idx(i, j + half, N)];
+        ++count;
+    }
+    if (i - half >= 0)
+    {
+        sum += map[ds_idx(i - half, j, N)];
+        ++count;
+    }
+    if (i + half < N)
+    {
+        sum += map[ds_idx(i + half, j, N)];
+        ++count;
+    }
+
+    return (count > 0) ? (sum / static_cast<float>(count)) : 0.0f;
+}
+
+static void ds_diamond_step(std::vector<float> &map, int N, int w, float M)
+{
+    int half = w / 2;
+
+    for (int x = 0; x < N - 1; x += w)
+    {
+        for (int z = 0; z < N - 1; z += w)
+        {
+            int cx = x + half;
+            int cz = z + half;
+
+            float NW = map[ds_idx(x,     z,     N)];
+            float NE = map[ds_idx(x + w, z,     N)];
+            float SW = map[ds_idx(x,     z + w, N)];
+            float SE = map[ds_idx(x + w, z + w, N)];
+
+            float avg = (NW + NE + SW + SE) / 4.0f;
+            map[ds_idx(cx, cz, N)] = avg + ds_random_in_range(M);
+        }
+    }
+}
+
+static void ds_square_step(std::vector<float> &map, int N, int w, float M)
+{
+    int half = w / 2;
+
+    for (int x = 0; x < N; x += half)
+    {
+        int start_z = ((x / half) % 2 == 0) ? half : 0;
+
+        for (int z = start_z; z < N; z += w)
+        {
+            float avg = ds_average_cardinal(map, x, z, half, N);
+            map[ds_idx(x, z, N)] = avg + ds_random_in_range(M);
+        }
+    }
+}
+
+static void ds_generate_heightmap(int n, float M, float r,
+                                  int &N_out, std::vector<float> &data_out)
+{
+    int N = (1 << n) + 1;
+    N_out = N;
+
+    data_out.assign(N * N, 0.0f);
+
+    float Mcur = M * 0.25f;
+
+    // corners
+    data_out[ds_idx(0,     0,     N)] = ds_random_in_range(Mcur);
+    data_out[ds_idx(0,     N - 1, N)] = ds_random_in_range(Mcur);
+    data_out[ds_idx(N - 1, 0,     N)] = ds_random_in_range(Mcur);
+    data_out[ds_idx(N - 1, N - 1, N)] = ds_random_in_range(Mcur);
+
+    for (int w = N - 1; w >= 2; w /= 2)
+    {
+        ds_diamond_step(data_out, N, w, Mcur);
+        ds_square_step(data_out, N, w, Mcur);
+        Mcur *= std::pow(2.0f, -r);
+    }
+}
+
+static void ds_generate_normalized_heightmap(int n, float M, float r,
+                                             int &N_out, std::vector<float> &data_out)
+{
+    ds_generate_heightmap(n, M, r, N_out, data_out);
+
+    if (data_out.empty())
+        return;
+
+    float minH = data_out[0];
+    float maxH = data_out[0];
+    for (size_t i = 1; i < data_out.size(); ++i)
+    {
+        float h = data_out[i];
+        if (h < minH) minH = h;
+        if (h > maxH) maxH = h;
+    }
+
+    float range = maxH - minH;
+    if (range > 1e-6f)
+    {
+        for (size_t i = 0; i < data_out.size(); ++i)
+        {
+            data_out[i] = (data_out[i] - minH) / range;
+        }
+    }
+    else
+    {
+        for (size_t i = 0; i < data_out.size(); ++i)
+            data_out[i] = 0.5f;
+    }
+}
+
+static void init_worldbox_heightmaps()
+{
+    // Generate first DS map into A
+    ds_generate_normalized_heightmap(
+        g_worldbox_n_exp, g_worldbox_M, g_worldbox_r,
+        g_worldbox_hmN, g_worldbox_heightData);
+
+    glGenTextures(1, &g_worldbox_heightTexA);
+    glBindTexture(GL_TEXTURE_2D, g_worldbox_heightTexA);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexImage2D(GL_TEXTURE_2D,
+                 0,
+                 GL_LUMINANCE,
+                 g_worldbox_hmN,
+                 g_worldbox_hmN,
+                 0,
+                 GL_LUMINANCE,
+                 GL_FLOAT,
+                 g_worldbox_heightData.data());
+
+    // Second DS map into B
+    ds_generate_normalized_heightmap(
+        g_worldbox_n_exp, g_worldbox_M, g_worldbox_r,
+        g_worldbox_hmN, g_worldbox_heightData);
+
+    glGenTextures(1, &g_worldbox_heightTexB);
+    glBindTexture(GL_TEXTURE_2D, g_worldbox_heightTexB);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexImage2D(GL_TEXTURE_2D,
+                 0,
+                 GL_LUMINANCE,
+                 g_worldbox_hmN,
+                 g_worldbox_hmN,
+                 0,
+                 GL_LUMINANCE,
+                 GL_FLOAT,
+                 g_worldbox_heightData.data());
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+}
+
+// Draw a big inside-view sphere around the camera.
+// Uses immediate mode for simplicity (one-time demo, not perf-critical).
+static void draw_worldbox_sphere()
+{
+    if (!g_worldbox_program)
+        return;
+
+    glPushAttrib(GL_ENABLE_BIT | GL_DEPTH_BUFFER_BIT | GL_LIGHTING_BIT);
+
+    // Sky should be behind everything, but we don't want it to write depth.
+    glDisable(GL_LIGHTING);
+    glDepthMask(GL_FALSE);
+    glEnable(GL_DEPTH_TEST);
+    glDisable(GL_TEXTURE_2D);
+    glDisable(GL_CULL_FACE); // render both sides, we're inside
+
+    glUseProgram(g_worldbox_program);
+
+    if (g_worldbox_uTime >= 0)
+        glUniform1f(g_worldbox_uTime, g_world_time_sec);
+    if (g_worldbox_uPalette >= 0)
+        glUniform1i(g_worldbox_uPalette, g_worldbox_palette_index);
+    if (g_worldbox_uUseDiamond >= 0)
+        glUniform1i(g_worldbox_uUseDiamond, g_worldbox_useDiamond);
+    if (g_worldbox_uBlend >= 0)
+        glUniform1f(g_worldbox_uBlend, g_worldbox_blend);
+
+    // Bind DS textures to units 0 and 1 (even if not used in fBm mode)
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, g_worldbox_heightTexA);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, g_worldbox_heightTexB);
+
+    const float radius = 300.0f;   // big enough to enclose maze
+    const int   stacks = 32;
+    const int   slices = 64;
+
+    for (int i = 0; i < stacks; ++i)
+    {
+        float v0   = static_cast<float>(i) / stacks;
+        float v1   = static_cast<float>(i + 1) / stacks;
+        float phi0 = v0 * static_cast<float>(M_PI);
+        float phi1 = v1 * static_cast<float>(M_PI);
+
+        glBegin(GL_TRIANGLE_STRIP);
+        for (int j = 0; j <= slices; ++j)
+        {
+            float u     = static_cast<float>(j) / slices;
+            float theta = u * 2.0f * static_cast<float>(M_PI);
+
+            float x0 = std::sin(phi0) * std::cos(theta);
+            float y0 = std::cos(phi0);
+            float z0 = std::sin(phi0) * std::sin(theta);
+
+            float x1 = std::sin(phi1) * std::cos(theta);
+            float y1 = std::cos(phi1);
+            float z1 = std::sin(phi1) * std::sin(theta);
+
+            glVertex3f(radius * x0, radius * y0, radius * z0);
+            glVertex3f(radius * x1, radius * y1, radius * z1);
+        }
+        glEnd();
+    }
+
+    // Unbind
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    glUseProgram(0);
+
+    glDepthMask(GL_TRUE);
+    glPopAttrib();
+}
+
+//==============================================================
+// Game globals
 //==============================================================
 Maze maze(5);
 const float TILE_SCALE          = 15.0f;
@@ -51,7 +622,7 @@ const game::EnemySpawnWeights ENEMY_SPAWN_WEIGHTS{ 1.0f, 1.0f, 1.0f, 1.0f };
 bool maze_had_enemies = false;
 
 // Visibility mask: 1 = visible, 0 = not visible
-std::vector<std::uint8_t> g_visible_tiles; // switch to bool
+std::vector<std::uint8_t> g_visible_tiles;
 
 const float PI_F = 3.14159265358979323846f;
 
@@ -63,6 +634,18 @@ glm::ivec2 random_start_cell()
     int start_r = std::rand() % maze.n;
     int start_c = std::rand() % maze.n;
     return glm::ivec2(start_r, start_c);
+}
+
+int get_palette_index(int idx)
+{
+    switch (idx)
+    {
+        case 1: return 2; // grayscale
+        case 2: return 4; // red
+        case 3: return 6; // night thunder
+        default:
+            return -1;
+    }
 }
 
 void init_textures()
@@ -80,6 +663,11 @@ void init_textures()
 
     globals::floor_texture = load_texture_2d(floorPath);
     globals::wall_texture  = load_texture_2d(wallPath);
+
+    // Map to palette
+    g_worldbox_palette_index = get_palette_index(idx);
+
+    g_worldbox_useDiamond = (idx == 2 || (idx == 1 && rand() % 2 == 0));
 }
 
 void place_player_at_cell(const glm::ivec2 & cell)
@@ -221,7 +809,7 @@ void compute_visibility_mask(const Maze & maze,
 //==============================================================
 // Lighting / GL init
 //==============================================================
-//mygllib::Light light;
+mygllib::Light light;
 
 void init()
 {
@@ -248,12 +836,48 @@ void init()
     glEnable(GL_TEXTURE_2D);
 
     globals::robert_texture = load_texture_2d("assets/textures/robert.png");
+
+    // --- GLEW and worldbox shader ---
+    GLenum err = glewInit();
+    if (err != GLEW_OK)
+    {
+        std::cerr << "GLEW init failed: "
+                  << reinterpret_cast<const char*>(glewGetErrorString(err))
+                  << std::endl;
+    }
+    else
+    {
+        g_worldbox_program = createProgram(g_worldbox_vs, g_worldbox_fs);
+        if (!g_worldbox_program)
+        {
+            std::cerr << "Failed to create worldbox shader program.\n";
+        }
+        else
+        {
+            g_worldbox_uTime        = glGetUniformLocation(g_worldbox_program, "uTime");
+            g_worldbox_uPalette     = glGetUniformLocation(g_worldbox_program, "uPaletteIndex");
+            g_worldbox_uUseDiamond  = glGetUniformLocation(g_worldbox_program, "uUseDiamond");
+            g_worldbox_uDiamondTex1 = glGetUniformLocation(g_worldbox_program, "uDiamondTex1");
+            g_worldbox_uDiamondTex2 = glGetUniformLocation(g_worldbox_program, "uDiamondTex2");
+            g_worldbox_uBlend       = glGetUniformLocation(g_worldbox_program, "uBlend");
+
+            // Initialize DS textures
+            init_worldbox_heightmaps();
+
+            // Bind sampler uniforms to texture units 0 and 1
+            glUseProgram(g_worldbox_program);
+            if (g_worldbox_uDiamondTex1 >= 0)
+                glUniform1i(g_worldbox_uDiamondTex1, 0);
+            if (g_worldbox_uDiamondTex2 >= 0)
+                glUniform1i(g_worldbox_uDiamondTex2, 1);
+            glUseProgram(0);
+        }
+    }
 }
 
 //==============================================================
 // Drawing Helpers
 //==============================================================
-// Draw an axis-aligned textured box given center and half-sizes
 void draw_textured_box(float cx, float cy, float cz,
                        float hx, float hy, float hz)
 {
@@ -325,12 +949,10 @@ void draw_maze_columns()
             if (!tile_visible(tr, tc))
                 continue;
 
-            // logical center (before any scaling)
             float cx = tc + 0.5f;
             float cz = tr + 0.5f;
             float cy = hy;          // center in Y
 
-            // Each wall fully occupies one 1x1 tile footprint
             draw_textured_box(cx, cy, cz,
                               0.5f, hy, 0.5f);
         }
@@ -357,7 +979,6 @@ void draw_maze_floor()
             float z0 = static_cast<float>(tr);
             float z1 = z0 + 1.0f;
 
-            // Texture coords: tile the texture across the maze
             float u0 = static_cast<float>(tc);
             float u1 = static_cast<float>(tc + 1);
             float v0 = static_cast<float>(tr);
@@ -381,8 +1002,7 @@ void draw_player_avatar(const game::PlayerMovement & playerState)
     static GLfloat emissive[]    = {1.0f, 0.1f, 0.8f, 1.0f};
     static GLfloat emissiveOff[] = {0.0f, 0.0f, 0.0f, 1.0f};
 
-    // save current enable/disable states
-    glPushAttrib(GL_ENABLE_BIT); 
+    glPushAttrib(GL_ENABLE_BIT);
     glDisable(GL_CULL_FACE);
 
     glPushMatrix();
@@ -398,7 +1018,6 @@ void draw_player_avatar(const game::PlayerMovement & playerState)
     }
     glPopMatrix();
 
-    // restore previous state
     glPopAttrib();
 }
 
@@ -420,7 +1039,6 @@ void draw_player_direction_indicator(const game::PlayerMovement & playerState)
     const float arrowHalfW    = arrowLength * 0.35f;
     const float arrowBackDist = arrowLength * 0.35f;
 
-    // Put the arrow slightly above the top of the player cylinder
     const float arrowHeight = playerState.position.y + game::PLAYER_BODY_HEIGHT + 0.05f;
 
     glm::vec3 tip        = playerState.position + dir * arrowLength;
@@ -447,7 +1065,6 @@ void draw_projectiles(const std::vector<game::Projectile> & projectiles)
     glColor3f(1.0f, 0.9f, 0.2f);
     for (const auto & p : projectiles)
     {
-        // If the projectile's cell is not visible, draw nothing
         if (!world_pos_visible(p.position.x, p.position.z))
             continue;
 
@@ -464,7 +1081,6 @@ struct GlyphPattern
 const GlyphPattern & glyph_for_char(char c)
 {
     static const GlyphPattern blank{{"   ", "   ", "   ", "   ", "   "}};
-
     static const std::array<std::pair<char, GlyphPattern>, 18> glyphs =
     {{
         {'0', {{"####", "#  #", "#  #", "#  #", "####"}}},
@@ -567,7 +1183,6 @@ void draw_health_bar(const game::PlayerMovement & playerState)
     const float x1 = x0 + barWidth;
     const float y1 = y0 + barHeight;
 
-    // Background
     glColor4f(0.05f, 0.05f, 0.05f, 0.8f);
     glBegin(GL_QUADS);
     glVertex2f(x0, y0);
@@ -576,7 +1191,6 @@ void draw_health_bar(const game::PlayerMovement & playerState)
     glVertex2f(x0, y1);
     glEnd();
 
-    // Fill
     float fillWidth = (barWidth - 2.0f * padding) * ratio;
     glColor3f(0.8f, 0.1f, 0.1f);
     glBegin(GL_QUADS);
@@ -586,7 +1200,6 @@ void draw_health_bar(const game::PlayerMovement & playerState)
     glVertex2f(x0 + padding, y1 - padding);
     glEnd();
 
-    // Border
     glColor3f(0.9f, 0.9f, 0.9f);
     glLineWidth(2.0f);
     glBegin(GL_LINE_LOOP);
@@ -762,12 +1375,15 @@ void display()
         return;
     }
 
-    glClearColor(1.0f, 1.0f, 1.0f, 1.0f);
+    glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glMatrixMode(GL_MODELVIEW);
     glLoadIdentity();
     mygllib::SingletonView::getInstance()->lookat();
+
+    // ----- Worldbox sphere (drawn first, behind everything) -----
+    draw_worldbox_sphere();
 
     glLineWidth(1.0f);
 
@@ -779,15 +1395,15 @@ void display()
     glBindTexture(GL_TEXTURE_2D, globals::floor_texture);
 
     glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-    glColor3f(1.0f, 1.0f, 1.0f); // no tint
+    glColor3f(1.0f, 1.0f, 1.0f);
 
     glPushMatrix();
-    glScalef(TILE_SCALE, TILE_SCALE, TILE_SCALE);  // go from tile-space to world-space
+    glScalef(TILE_SCALE, TILE_SCALE, TILE_SCALE);
     draw_maze_floor();
     glPopMatrix();
 
     glBindTexture(GL_TEXTURE_2D, 0);
-    glPopAttrib(); // restores lighting + enable states
+    glPopAttrib();
 
     // ----- Axes -----
     if (globals::draw_axes)
@@ -807,12 +1423,12 @@ void display()
         glBindTexture(GL_TEXTURE_2D, globals::wall_texture);
 
         glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
-        glColor3f(1.0f, 1.0f, 1.0f); // no tint
+        glColor3f(1.0f, 1.0f, 1.0f);
 
         draw_maze_columns();
 
         glBindTexture(GL_TEXTURE_2D, 0);
-        glPopAttrib(); // restore lighting + enable states
+        glPopAttrib();
     }
     glPopMatrix();
 
@@ -885,27 +1501,53 @@ int main(int argc, char ** argv)
 
     start_new_run();
 
-    // ----- Input wrapper (sets cursor disabled + callback inside ctor) -----
     mygllib::GLFWInput input(window);
 
-    // Timing for dt
     double lastTime = glfwGetTime();
 
-    // ----- Main loop -----
     while (!glfwWindowShouldClose(window))
     {
         mygllib::View & view = *(mygllib::SingletonView::getInstance());
 
-        // 1) Reset deltas for this frame
         input.begin_frame();
-
-        // 2) Pump events
         glfwPollEvents();
 
-        // 3) Timing
         double currentTime = glfwGetTime();
         float dt = static_cast<float>(currentTime - lastTime);
         lastTime = currentTime;
+
+        // advance worldbox animation time
+        g_world_time_sec += dt;
+
+        // Animate DS morphing regardless of mode
+        if (g_worldbox_heightTexA && g_worldbox_heightTexB)
+        {
+            g_worldbox_blend += g_worldbox_blendSpeed * dt;
+            if (g_worldbox_blend >= 1.0f)
+            {
+                g_worldbox_blend = 0.0f;
+
+                // Swap A/B
+                std::swap(g_worldbox_heightTexA, g_worldbox_heightTexB);
+
+                // Regenerate new B
+                ds_generate_normalized_heightmap(
+                    g_worldbox_n_exp, g_worldbox_M, g_worldbox_r,
+                    g_worldbox_hmN, g_worldbox_heightData);
+
+                glBindTexture(GL_TEXTURE_2D, g_worldbox_heightTexB);
+                glTexImage2D(GL_TEXTURE_2D,
+                             0,
+                             GL_LUMINANCE,
+                             g_worldbox_hmN,
+                             g_worldbox_hmN,
+                             0,
+                             GL_LUMINANCE,
+                             GL_FLOAT,
+                             g_worldbox_heightData.data());
+                glBindTexture(GL_TEXTURE_2D, 0);
+            }
+        }
 
         // 4) Handle input & game updates
         handle_function_keys(input);
@@ -919,7 +1561,9 @@ int main(int argc, char ** argv)
         {
             game::update_player_movement(input, dt, view, maze, TILE_SCALE);
             game::update_enemies(dt, game::player_movement_state(), maze);
-            game::update_projectiles(dt, maze, TILE_SCALE, game::active_enemies(), game::player_movement_state());
+            game::update_projectiles(dt, maze, TILE_SCALE,
+                                     game::active_enemies(),
+                                     game::player_movement_state());
 
             game::PlayerMovement & playerState = game::player_movement_state();
             if (playerState.health <= 0)
@@ -934,7 +1578,6 @@ int main(int argc, char ** argv)
                 continue;
             }
 
-            // Update camera
             if (globals::top_down_view)
             {
                 handle_top_down_zoom(input);
@@ -946,7 +1589,6 @@ int main(int argc, char ** argv)
                 view.update_center_from_yaw_pitch();
             }
 
-            // 4.5) Compute raycast visibility from the player's position
             glm::vec3 origin = playerState.position;
             float rayYaw = 0.0f;
 

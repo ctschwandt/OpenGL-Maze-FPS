@@ -23,8 +23,8 @@ namespace
     {
         float cosPitch = std::cos(pitch);
         float sinPitch = std::sin(pitch);
-        float cosYaw   = std::cos(yaw);
-        float sinYaw   = std::sin(yaw);
+        float cosYaw = std::cos(yaw);
+        float sinYaw = std::sin(yaw);
 
         return glm::normalize(glm::vec3(
             cosYaw * cosPitch,
