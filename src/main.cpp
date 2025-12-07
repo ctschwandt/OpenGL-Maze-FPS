@@ -33,6 +33,7 @@
 #include "Projectile.h"
 #include "Texture.h"
 #include "mygllib/config.h"
+#include "Audio.h"
 #include <glm/vec2.hpp>
 #include <glm/vec3.hpp>
 #include <glm/gtx/norm.hpp>
@@ -1426,6 +1427,15 @@ int main(int argc, char ** argv)
         return -1;
     }
 
+    if (!audio::init())
+    {
+        std::cerr << "Audio initialization failed; continuing without sound." << std::endl;
+    }
+    else
+    {
+        audio::play_music("assets/audio/aphex_twin_3.mp3", true);
+    }
+
     // Initial reshape
     mygllib::Reshape::reshape(mygllib::WIN_W, mygllib::WIN_H);
 
@@ -1569,6 +1579,7 @@ int main(int argc, char ** argv)
         glfwSwapBuffers(window);
     }
 
+    audio::shutdown();
     glfwTerminate();
     return 0;
 }
