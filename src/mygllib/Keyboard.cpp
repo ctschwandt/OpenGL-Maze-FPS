@@ -14,8 +14,8 @@
 namespace
 {
     // radians per second for keyboard look
-    const float TURN_SPEED      = 1.5f; // yaw speed (left/right)
-    const float LOOK_SPEED      = 1.5f; // pitch speed (up/down)
+    const float TURN_SPEED = 1.5f; // yaw speed (left/right)
+    const float LOOK_SPEED = 1.5f; // pitch speed (up/down)
 }
 
 void mygllib::Keyboard::update_from_input(const GLFWInput & input, float dt)
@@ -57,11 +57,10 @@ void mygllib::Keyboard::update_from_input(const GLFWInput & input, float dt)
         return;
 
     // --- Rotation (arrow keys) ---
-
     // LEFT / RIGHT -> yaw
     if (input.key_down(GLFW_KEY_RIGHT))
     {
-        view.yaw() += TURN_SPEED * dt;   // same sign as mouse moving right
+        view.yaw() += TURN_SPEED * dt;
         rotated = true;
     }
     if (input.key_down(GLFW_KEY_LEFT))
@@ -73,16 +72,16 @@ void mygllib::Keyboard::update_from_input(const GLFWInput & input, float dt)
     // UP / DOWN -> pitch
     if (input.key_down(GLFW_KEY_UP))
     {
-        view.pitch() += LOOK_SPEED * dt; // look up
+        view.pitch() += LOOK_SPEED * dt;
         rotated = true;
     }
     if (input.key_down(GLFW_KEY_DOWN))
     {
-        view.pitch() -= LOOK_SPEED * dt; // look down
+        view.pitch() -= LOOK_SPEED * dt;
         rotated = true;
     }
 
-    // Clamp pitch to same range as mouse
+    // clamp pitch to same range as mouse
     if (rotated)
     {
         view.pitch() = std::clamp(view.pitch(), -1.2f, 1.2f);
