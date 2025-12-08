@@ -85,6 +85,8 @@ public:
 
     // Fast lookup using precomputed grid
     bool   is_wall_tile(int tr, int tc) const;
+    void   mark_tile_discovered(int tr, int tc);
+    bool   is_tile_discovered(int tr, int tc) const;
     bool   findPath(int startTr, int startTc, int goalTr, int goalTc,
                     std::vector<glm::ivec2> & outPath) const;
 
@@ -93,6 +95,9 @@ public:
     Path                path;
     int                 n;
     int                 tiles_n;
+
+    // 0 = unknown, 1 = discovered; size = tiles_n * tiles_n
+    std::vector<uint8_t> discovered_tiles;
 
     static Cell*        SENTINEL_CELL;
     static const int    DELTA[4][2];
