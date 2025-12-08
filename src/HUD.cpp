@@ -236,9 +236,9 @@ namespace
 
         glColor3f(0.1f, 0.9f, 0.1f);
         glBegin(GL_TRIANGLES);
-        glVertex2f(playerX + std::cos(yaw) * size, playerY + std::sin(yaw) * size);
-        glVertex2f(playerX + std::cos(yaw + 2.5f) * size, playerY + std::sin(yaw + 2.5f) * size);
-        glVertex2f(playerX + std::cos(yaw - 2.5f) * size, playerY + std::sin(yaw - 2.5f) * size);
+        glVertex2f(playerX + std::cos(yaw) * size, playerY - std::sin(yaw) * size);
+        glVertex2f(playerX + std::cos(yaw + 2.5f) * size, playerY - std::sin(yaw + 2.5f) * size);
+        glVertex2f(playerX + std::cos(yaw - 2.5f) * size, playerY - std::sin(yaw - 2.5f) * size);
         glEnd();
 
         // Enemy blips
