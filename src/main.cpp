@@ -31,6 +31,7 @@
 #include "Enemy.h"
 #include "Player.h"
 #include "Projectile.h"
+#include "HUD.h"
 #include "Texture.h"
 #include "mygllib/config.h"
 #include <glm/vec2.hpp>
@@ -743,7 +744,7 @@ inline bool world_pos_visible(float x, float z)
 //==============================================================
 // Raycasting / Visibility
 //==============================================================
-void compute_visibility_mask(const Maze & maze,
+void compute_visibility_mask(Maze & maze,
                              float tileScale,
                              float maxRayDistance,
                              const glm::vec3 & origin,
@@ -755,6 +756,19 @@ void compute_visibility_mask(const Maze & maze,
 
     g_visible_tiles.assign(tileN * tileN, 0);
 
+    auto mark_visible = [&](int tr, int tc)
+    {
+        if (tr < 0 || tr >= tileN || tc < 0 || tc >= tileN)
+            return;
+
+        int idx = tr * tileN + tc;
+        if (idx < 0 || idx >= static_cast<int>(g_visible_tiles.size()))
+            return;
+
+        g_visible_tiles[idx] = 1;
+        maze.mark_tile_discovered(tr, tc);
+    };
+
     float eyeX = origin.x;
     float eyeZ = origin.z;
 
@@ -762,11 +776,7 @@ void compute_visibility_mask(const Maze & maze,
     int originTc = static_cast<int>(std::floor(eyeX / tileScale));
     int originTr = static_cast<int>(std::floor(eyeZ / tileScale));
     if (originTr >= 0 && originTr < tileN && originTc >= 0 && originTc < tileN)
-    {
-        int originIdx = originTr * tileN + originTc;
-        if (originIdx >= 0 && originIdx < static_cast<int>(g_visible_tiles.size()))
-            g_visible_tiles[originIdx] = 1;
-    }
+        mark_visible(originTr, originTc);
 
     const int   NUM_RAYS = 720;
     const float FOV      = PI_F * 0.5f;   // 90 degrees
@@ -797,8 +807,7 @@ void compute_visibility_mask(const Maze & maze,
             if (tr < 0 || tr >= tileN || tc < 0 || tc >= tileN)
                 break;
 
-            int idx = tr * tileN + tc;
-            g_visible_tiles[idx] = 1;
+            mark_visible(tr, tc);
 
             if (maze.is_wall_tile(tr, tc))
                 break;
@@ -1073,156 +1082,6 @@ void draw_projectiles(const std::vector<game::Projectile> & projectiles)
     }
 }
 
-struct GlyphPattern
-{
-    std::array<std::string, 5> rows;
-};
-
-const GlyphPattern & glyph_for_char(char c)
-{
-    static const GlyphPattern blank{{"   ", "   ", "   ", "   ", "   "}};
-    static const std::array<std::pair<char, GlyphPattern>, 18> glyphs =
-    {{
-        {'0', {{"####", "#  #", "#  #", "#  #", "####"}}},
-        {'1', {{"  # ", "  # ", "  # ", "  # ", "  # "}}},
-        {'2', {{"####", "   #", "####", "#   ", "####"}}},
-        {'3', {{"####", "   #", "####", "   #", "####"}}},
-        {'4', {{"#  #", "#  #", "####", "   #", "   #"}}},
-        {'5', {{"####", "#   ", "####", "   #", "####"}}},
-        {'6', {{"####", "#   ", "####", "#  #", "####"}}},
-        {'7', {{"####", "   #", "   #", "   #", "   #"}}},
-        {'8', {{"####", "#  #", "####", "#  #", "####"}}},
-        {'9', {{"####", "#  #", "####", "   #", "####"}}},
-        {'S', {{"####", "#   ", "### ", "   #", "####"}}},
-        {'C', {{"####", "#   ", "#   ", "#   ", "####"}}},
-        {'O', {{"####", "#  #", "#  #", "#  #", "####"}}},
-        {'R', {{"### ", "#  #", "### ", "# # ", "#  #"}}},
-        {'E', {{"####", "#   ", "### ", "#   ", "####"}}},
-        {':', {{"  ", "##", "  ", "##", "  "}}},
-        {' ', {{"   ", "   ", "   ", "   ", "   "}}},
-        {'-', {{"    ", "    ", "####", "    ", "    "}}}
-    }};
-
-    char key = static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
-    for (const auto & entry : glyphs)
-    {
-        if (entry.first == key)
-            return entry.second;
-    }
-
-    return blank;
-}
-
-void draw_glyph(float x, float y, float cellSize, const GlyphPattern & glyph)
-{
-    const float height = static_cast<float>(glyph.rows.size());
-
-    glBegin(GL_QUADS);
-    for (std::size_t row = 0; row < glyph.rows.size(); ++row)
-    {
-        const std::string & line = glyph.rows[row];
-        for (std::size_t col = 0; col < line.size(); ++col)
-        {
-            if (line[col] != '#')
-                continue;
-
-            float px = x + static_cast<float>(col) * cellSize;
-            float py = y + (height - 1.0f - static_cast<float>(row)) * cellSize;
-
-            glVertex2f(px,            py);
-            glVertex2f(px + cellSize, py);
-            glVertex2f(px + cellSize, py + cellSize);
-            glVertex2f(px,            py + cellSize);
-        }
-    }
-    glEnd();
-}
-
-void draw_block_text(float x, float y, float cellSize, const std::string & text)
-{
-    float cursor = x;
-    for (char ch : text)
-    {
-        const GlyphPattern & glyph = glyph_for_char(ch);
-        draw_glyph(cursor, y, cellSize, glyph);
-
-        std::size_t width = glyph.rows.empty() ? 0 : glyph.rows.front().size();
-        cursor += (static_cast<float>(width) + 1.0f) * cellSize;
-    }
-}
-
-void draw_health_bar(const game::PlayerMovement & playerState)
-{
-    const float margin     = 20.0f;
-    const float barWidth   = 200.0f;
-    const float barHeight  = 20.0f;
-    const float padding    = 2.0f;
-
-    float ratio = (playerState.maxHealth > 0)
-                ? static_cast<float>(playerState.health) / static_cast<float>(playerState.maxHealth)
-                : 0.0f;
-    ratio = std::clamp(ratio, 0.0f, 1.0f);
-
-    glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_COLOR_BUFFER_BIT);
-    glDisable(GL_LIGHTING);
-    glDisable(GL_TEXTURE_2D);
-    glDisable(GL_DEPTH_TEST);
-    glDisable(GL_CULL_FACE);
-
-    glMatrixMode(GL_PROJECTION);
-    glPushMatrix();
-    glLoadIdentity();
-    glOrtho(0.0, mygllib::WIN_W, 0.0, mygllib::WIN_H, -1.0, 1.0);
-
-    glMatrixMode(GL_MODELVIEW);
-    glPushMatrix();
-    glLoadIdentity();
-
-    const float x0 = margin;
-    const float y0 = margin;
-    const float x1 = x0 + barWidth;
-    const float y1 = y0 + barHeight;
-
-    glColor4f(0.05f, 0.05f, 0.05f, 0.8f);
-    glBegin(GL_QUADS);
-    glVertex2f(x0, y0);
-    glVertex2f(x1, y0);
-    glVertex2f(x1, y1);
-    glVertex2f(x0, y1);
-    glEnd();
-
-    float fillWidth = (barWidth - 2.0f * padding) * ratio;
-    glColor3f(0.8f, 0.1f, 0.1f);
-    glBegin(GL_QUADS);
-    glVertex2f(x0 + padding, y0 + padding);
-    glVertex2f(x0 + padding + fillWidth, y0 + padding);
-    glVertex2f(x0 + padding + fillWidth, y1 - padding);
-    glVertex2f(x0 + padding, y1 - padding);
-    glEnd();
-
-    glColor3f(0.9f, 0.9f, 0.9f);
-    glLineWidth(2.0f);
-    glBegin(GL_LINE_LOOP);
-    glVertex2f(x0, y0);
-    glVertex2f(x1, y0);
-    glVertex2f(x1, y1);
-    glVertex2f(x0, y1);
-    glEnd();
-
-    glColor3f(0.95f, 0.95f, 0.95f);
-    const float textCellSize = 4.0f;
-    const float textYOffset  = 12.0f;
-    float textY = y1 + textYOffset;
-    draw_block_text(x0, textY, textCellSize, "SCORE: " + std::to_string(playerState.score));
-
-    glPopMatrix();
-    glMatrixMode(GL_PROJECTION);
-    glPopMatrix();
-    glMatrixMode(GL_MODELVIEW);
-
-    glPopAttrib();
-}
-
 //==============================================================
 // Camera helpers
 //==============================================================
@@ -1448,7 +1307,7 @@ void display()
 
     draw_projectiles(game::active_projectiles());
 
-    draw_health_bar(game::player_movement_state());
+    game::draw_hud(maze, TILE_SCALE);
 }
 
 //==============================================================
@@ -1515,6 +1374,8 @@ int main(int argc, char ** argv)
         double currentTime = glfwGetTime();
         float dt = static_cast<float>(currentTime - lastTime);
         lastTime = currentTime;
+
+        game::update_fps(dt);
 
         // advance worldbox animation time
         g_world_time_sec += dt;

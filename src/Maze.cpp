@@ -246,6 +246,9 @@ void Maze::init(int start_r, int start_c)
 
     // Build precomputed wall tile grid after maze is fully carved
     build_wall_tiles();
+
+    // Reset discovery state for all tiles
+    discovered_tiles.assign(tiles_n * tiles_n, 0);
 }
 
 //----------------------------------------------------------------------
@@ -379,6 +382,28 @@ bool Maze::is_wall_tile(int tr, int tc) const
     }
 
     return wall_tiles[tr * tiles_n + tc] != 0;
+}
+
+void Maze::mark_tile_discovered(int tr, int tc)
+{
+    if (tr < 0 || tr >= tiles_n || tc < 0 || tc >= tiles_n)
+        return;
+
+    if (discovered_tiles.empty())
+        return;
+
+    discovered_tiles[tr * tiles_n + tc] = 1;
+}
+
+bool Maze::is_tile_discovered(int tr, int tc) const
+{
+    if (tr < 0 || tr >= tiles_n || tc < 0 || tc >= tiles_n)
+        return false;
+
+    if (discovered_tiles.empty())
+        return false;
+
+    return discovered_tiles[tr * tiles_n + tc] != 0;
 }
 
 bool Maze::findPath(int startTr, int startTc, int goalTr, int goalTc,
