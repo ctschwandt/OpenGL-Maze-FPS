@@ -1318,7 +1318,6 @@ int main(int argc, char ** argv)
     (void)argc;
     (void)argv;
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
-    glfwSwapInterval(1); // turn on v-sync
 
     // ----- Create window & GL context -----
     mygllib::WIN_W = 700;
@@ -1334,6 +1333,9 @@ int main(int argc, char ** argv)
         std::cerr << ex.what() << std::endl;
         return -1;
     }
+
+    // turn on v-sync (prevents tearing)
+    glfwSwapInterval(1);
 
     // Initial reshape
     mygllib::Reshape::reshape(mygllib::WIN_W, mygllib::WIN_H);
@@ -1364,6 +1366,14 @@ int main(int argc, char ** argv)
 
     double lastTime = glfwGetTime();
 
+    // ---- FPS smoothing globals (per main) ----
+    double fpsLastTime = lastTime;
+    int    fpsFrames   = 0;
+    float  fpsValue    = 0.0f;
+
+    // choose your smoothing window (seconds)
+    const double FPS_SMOOTHING_WINDOW = 12.0;
+
     while (!glfwWindowShouldClose(window))
     {
         mygllib::View & view = *(mygllib::SingletonView::getInstance());
@@ -1375,7 +1385,21 @@ int main(int argc, char ** argv)
         float dt = static_cast<float>(currentTime - lastTime);
         lastTime = currentTime;
 
-        game::update_fps(dt);
+        // ---- smoothed FPS counter ----
+        fpsFrames++;
+
+        double diff = currentTime - fpsLastTime;
+        if (diff >= FPS_SMOOTHING_WINDOW) // average over 12 seconds
+        {
+            // average FPS over the window
+            fpsValue = static_cast<float>(std::floor(fpsFrames / diff));
+
+            fpsFrames   = 0;
+            fpsLastTime = currentTime;
+
+            // update HUD FPS (only changes every smoothing window)
+            game::update_fps(fpsValue);
+        }
 
         // advance worldbox animation time
         g_world_time_sec += dt;
