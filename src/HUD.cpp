@@ -211,7 +211,7 @@ namespace
                     glColor3f(0.5f, 0.5f, 0.5f);
 
                 float x0 = mapLeft + static_cast<float>(tc) * tileSize;
-                float y0 = mapBottom + static_cast<float>(tr) * tileSize;
+                float y0 = mapTop - (static_cast<float>(tr + 1) * tileSize);
                 float x1 = x0 + tileSize;
                 float y1 = y0 + tileSize;
 
@@ -229,16 +229,16 @@ namespace
         float px = player.position.x / tileScale;
         float pz = player.position.z / tileScale;
         float playerX = mapLeft + px * tileSize;
-        float playerY = mapBottom + pz * tileSize;
+        float playerY = mapTop - pz * tileSize;
 
         float yaw = current_yaw();
         float size = std::max(3.0f, tileSize * 0.4f);
 
         glColor3f(0.1f, 0.9f, 0.1f);
         glBegin(GL_TRIANGLES);
-        glVertex2f(playerX + std::cos(yaw) * size, playerY + std::sin(yaw) * size);
-        glVertex2f(playerX + std::cos(yaw + 2.5f) * size, playerY + std::sin(yaw + 2.5f) * size);
-        glVertex2f(playerX + std::cos(yaw - 2.5f) * size, playerY + std::sin(yaw - 2.5f) * size);
+        glVertex2f(playerX + std::cos(yaw) * size, playerY - std::sin(yaw) * size);
+        glVertex2f(playerX + std::cos(yaw + 2.5f) * size, playerY - std::sin(yaw + 2.5f) * size);
+        glVertex2f(playerX + std::cos(yaw - 2.5f) * size, playerY - std::sin(yaw - 2.5f) * size);
         glEnd();
 
         // Enemy blips
@@ -248,7 +248,7 @@ namespace
             float ex = enemy.pos.x / tileScale;
             float ez = enemy.pos.z / tileScale;
             float enemyX = mapLeft + ex * tileSize;
-            float enemyY = mapBottom + ez * tileSize;
+            float enemyY = mapTop - ez * tileSize;
             float half = std::max(2.0f, tileSize * 0.2f);
 
             glBegin(GL_QUADS);
