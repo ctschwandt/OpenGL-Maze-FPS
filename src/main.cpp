@@ -615,14 +615,14 @@ Maze maze(5);
 const float TILE_SCALE          = 15.0f;
 const float TOP_DOWN_ZOOM_STEP  = 0.005f;
 const float TOP_DOWN_ZOOM_MIN   = 0.1f;
-const float TOP_DOWN_ZOOM_MAX   = 2.0f;
+const float TOP_DOWN_ZOOM_MAX   = 0.5f;
 float       top_down_zoom       = 0.2f;
 const game::EnemySpawnWeights ENEMY_SPAWN_WEIGHTS{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 bool maze_had_enemies = false;
 
 // Visibility mask: 1 = visible, 0 = not visible
-std::vector<std::uint8_t> g_visible_tiles;
+std::vector<bool> g_visible_tiles;
 
 const float PI_F = 3.14159265358979323846f;
 
