@@ -5,10 +5,7 @@
 
 namespace game
 {
-    // Update the smoothed FPS estimate using the frame delta time.
-    void update_fps(float dt);
-
-    // Draw the on-screen HUD overlay (health, score, minimap, FPS).
+    // Draw the on-screen HUD overlay (health, score, minimap).
     void draw_hud(const Maze & maze, float tileScale);
 }
 

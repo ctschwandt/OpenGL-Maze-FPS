@@ -12,7 +12,6 @@
 #include <array>
 #include <cmath>
 #include <cctype>
-#include <sstream>
 #include <string>
 #include <vector>
 
@@ -270,38 +269,10 @@ namespace
         glEnd();
     }
 
-    void draw_fps(float fps)
-    {
-        std::stringstream ss;
-        ss << "FPS: " << static_cast<int>(std::round(fps));
-
-        glColor3f(0.95f, 0.95f, 0.95f);
-        const float cell = 4.0f;
-        float x = 10.0f;
-        float y = mygllib::WIN_H - 20.0f;
-        draw_block_text(x, y, cell, ss.str());
-    }
 }
 
 namespace game
 {
-    namespace
-    {
-        float g_smoothed_fps = 0.0f;
-    }
-
-    void update_fps(float dt)
-    {
-        if (dt <= 0.0f)
-            return;
-
-        float fps = 1.0f / dt;
-        if (g_smoothed_fps <= 0.0f)
-            g_smoothed_fps = fps;
-        else
-            g_smoothed_fps = 0.1f * fps + 0.9f * g_smoothed_fps;
-    }
-
     void draw_hud(const Maze & maze, float tileScale)
     {
         glPushAttrib(GL_ENABLE_BIT | GL_LINE_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -322,7 +293,6 @@ namespace game
         const game::PlayerMovement & playerState = game::player_movement_state();
         draw_health_and_score(playerState);
         draw_minimap(maze, tileScale);
-        draw_fps(g_smoothed_fps);
 
         glPopMatrix();
         glMatrixMode(GL_PROJECTION);
