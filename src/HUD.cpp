@@ -112,8 +112,6 @@ namespace
                     : 0.0f;
         ratio = std::clamp(ratio, 0.0f, 1.0f);
 
-        const bool lowHealth = ratio < 0.25f;
-
         const float x0 = margin;
         const float y0 = margin;
         const float x1 = x0 + barWidth;
@@ -128,10 +126,7 @@ namespace
         glEnd();
 
         float fillWidth = (barWidth - 2.0f * padding) * ratio;
-        if (lowHealth)
-            glColor3f(0.9f, 0.15f, 0.15f);
-        else
-            glColor3f(0.2f, 0.8f, 0.2f);
+        glColor3f(0.9f, 0.15f, 0.15f);
 
         glBegin(GL_QUADS);
         glVertex2f(x0 + padding, y0 + padding);
