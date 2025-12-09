@@ -650,6 +650,9 @@ void start_new_run(bool resetPlayerStats = true)
 {
     glm::ivec2 playerStartCell = random_start_cell();
 
+    globals::enemy_freeze_active       = false;
+    globals::enemy_freeze_used_this_run = false;
+
     maze.init(playerStartCell.x, playerStartCell.y);
     maze.print();
     std::cout << std::endl;
@@ -1067,64 +1070,32 @@ void handle_top_down_zoom(const mygllib::GLFWInput & input)
 void handle_function_keys(const mygllib::GLFWInput &input)
 {
     static bool tab_down_previous = false;
-    static bool f5_down_previous = false;
-
-    static bool has_saved_view    = false;
-    static glm::vec3 saved_eye    = glm::vec3(0.0f);
-    static glm::vec3 saved_ref    = glm::vec3(0.0f);
-    static glm::vec3 saved_up     = glm::vec3(0.0f);
-    static float     saved_yaw    = 0.0f;
-    static float     saved_pitch  = 0.0f;
+    static bool grave_down_previous = false;
+    static bool r_down_previous = false;
 
     bool tab_down = input.key_down(GLFW_KEY_TAB);
-    bool f5_down = input.key_down(GLFW_KEY_F5);
+    bool grave_down = input.key_down(GLFW_KEY_GRAVE_ACCENT);
+    bool r_down = input.key_down(GLFW_KEY_R);
 
     if (tab_down && !tab_down_previous)
     {
         globals::top_down_view = !globals::top_down_view;
     }
 
-    if (f5_down && !f5_down_previous)
+    if (grave_down && !grave_down_previous)
     {
-        mygllib::View & view = *(mygllib::SingletonView::getInstance());
+        globals::enemy_freeze_active        = !globals::enemy_freeze_active;
+        globals::enemy_freeze_used_this_run = true;
+    }
 
-        if (globals::game_state == globals::GameState::MAZE)
-        {
-            saved_eye   = glm::vec3(view.eyex(), view.eyey(), view.eyez());
-            saved_ref   = glm::vec3(view.refx(), view.refy(), view.refz());
-            saved_up    = glm::vec3(view.upx(), view.upy(), view.upz());
-            saved_yaw   = view.yaw();
-            saved_pitch = view.pitch();
-            has_saved_view = true;
-
-            globals::robert_rot_x = 0.0f;
-            globals::robert_rot_y = 0.0f;
-
-            view.eye(0.0f, 0.0f, 5.0f);
-            view.ref(0.0f, 0.0f, 0.0f);
-            view.up(0.0f, 1.0f, 0.0f);
-            view.yaw() = 0.0f;
-            view.pitch() = 0.0f;
-        }
-        else
-        {
-            if (has_saved_view)
-            {
-                view.eye(saved_eye.x, saved_eye.y, saved_eye.z);
-                view.ref(saved_ref.x, saved_ref.y, saved_ref.z);
-                view.up(saved_up.x, saved_up.y, saved_up.z);
-                view.yaw() = saved_yaw;
-                view.pitch() = saved_pitch;
-            }
-        }
-
-        globals::game_state = (globals::game_state == globals::GameState::MAZE)
-            ? globals::GameState::ROBERT_CUBE
-            : globals::GameState::MAZE;
+    if (r_down && !r_down_previous)
+    {
+        start_new_run();
     }
 
     tab_down_previous = tab_down;
-    f5_down_previous = f5_down;
+    grave_down_previous = grave_down;
+    r_down_previous = r_down;
 }
 
 //==============================================================

@@ -9,6 +9,7 @@
 #include "Enemy.h"
 #include "Maze.h"
 #include "Player.h"
+#include "Globals.h"
 
 namespace game
 {
@@ -77,8 +78,11 @@ namespace game
                 int oldHealth = enemy.health;
                 enemy.health -= p.damage;
 
-                if (enemy.health <= 0 && oldHealth > 0)
+                if (enemy.health <= 0 && oldHealth > 0 &&
+                    !globals::enemy_freeze_used_this_run)
+                {
                     playerState.score += score_for_enemy(enemy.type());
+                }
 
                 p.remainingLife = -1.0f;
                 break;

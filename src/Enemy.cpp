@@ -14,6 +14,7 @@
 #include "Draw.h"
 #include "Maze.h"
 #include "Player.h"
+#include "Globals.h"
 
 namespace game
 {
@@ -433,6 +434,17 @@ namespace game
     {
         const glm::vec3 playerPos = playerState.position;
         auto & enemies = active_enemies();
+
+        if (globals::enemy_freeze_active)
+        {
+            for (auto & enemy : enemies)
+            {
+                enemy.set_previous_position(enemy.pos);
+                enemy.vel = glm::vec3(0.0f);
+            }
+            return;
+        }
+
         for (auto & enemy : enemies)
             enemy.set_previous_position(enemy.pos);
 

@@ -19,4 +19,7 @@ namespace globals
 
     float robert_rot_x = 0.0f;
     float robert_rot_y = 0.0f;
+
+    bool enemy_freeze_active = false;
+    bool enemy_freeze_used_this_run = false;
 }
