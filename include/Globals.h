@@ -17,6 +17,7 @@ namespace globals
     extern bool draw_plane;
     extern bool draw_axes;
     extern bool draw_wire;
+    extern bool draw_minimap;
     extern bool top_down_view;
 
     extern GLuint floor_texture;
