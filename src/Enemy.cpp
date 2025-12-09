@@ -21,13 +21,13 @@ namespace game
     Enemy::Enemy(EnemyType type, float pathSpeed, float chaseSpeed, int baseHealth)
         : type_(type)
     {
-        pathSpeed_  = pathSpeed;
+        pathSpeed_ = pathSpeed;
         chaseSpeed_ = chaseSpeed;
-        health      = baseHealth;
+        health = baseHealth;
     }
 
     CylinderBot::CylinderBot()
-        : Enemy(EnemyType::CylinderBot, 7.0f, 14.0f, 80)
+        : Enemy(EnemyType::CylinderBot, 5.0f, 6.0f, 80)
     {
         radius = 0.8f;
         height = 2.4f;

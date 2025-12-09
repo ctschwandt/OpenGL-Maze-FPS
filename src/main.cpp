@@ -726,7 +726,7 @@ void compute_visibility_mask(Maze & maze,
         mark_visible(originTr, originTc);
 
     const int   NUM_RAYS = 720;
-    const float FOV_DEG  = 100.0f; // 100 degrees
+    const float FOV_DEG  = 120.0f; // 100 degrees
     const float FOV = FOV_DEG * (PI_F / 180.0f);
     const float HALF_FOV = FOV * 0.5f;
     const float STEP = tileScale * 0.25f;
@@ -902,7 +902,7 @@ void draw_maze_columns()
             if (!maze.is_wall_tile(tr, tc))
                 continue;
 
-            // If this cell is not visible, draw nothing contained in it
+            // if this cell is not visible, draw nothing contained in it
             if (!tile_visible(tr, tc))
                 continue;
 
@@ -992,16 +992,16 @@ void draw_player_direction_indicator(const game::PlayerMovement & playerState)
     else
         perp = glm::vec3(1.0f, 0.0f, 0.0f);
 
-    const float arrowLength   = game::PLAYER_RADIUS * 2.0f;
-    const float arrowHalfW    = arrowLength * 0.35f;
+    const float arrowLength = game::PLAYER_RADIUS * 2.0f;
+    const float arrowHalfW = arrowLength * 0.35f;
     const float arrowBackDist = arrowLength * 0.35f;
 
     const float arrowHeight = playerState.position.y + game::PLAYER_BODY_HEIGHT + 0.05f;
 
-    glm::vec3 tip        = playerState.position + dir * arrowLength;
+    glm::vec3 tip = playerState.position + dir * arrowLength;
     glm::vec3 baseCenter = playerState.position - dir * arrowBackDist;
-    glm::vec3 baseLeft   = baseCenter - perp * arrowHalfW;
-    glm::vec3 baseRight  = baseCenter + perp * arrowHalfW;
+    glm::vec3 baseLeft = baseCenter - perp * arrowHalfW;
+    glm::vec3 baseRight = baseCenter + perp * arrowHalfW;
 
     glPushAttrib(GL_LIGHTING_BIT);
     glDisable(GL_LIGHTING);
@@ -1038,7 +1038,7 @@ void apply_top_down_view(const game::PlayerMovement & playerState,
                          float tileScale,
                          const Maze & maze)
 {
-    float mazeSpan     = tileScale * static_cast<float>(maze.tiles_n);
+    float mazeSpan = tileScale * static_cast<float>(maze.tiles_n);
     float cameraHeight = std::max(mazeSpan, 120.0f) * top_down_zoom;
 
     view.eye(playerState.position.x, cameraHeight, playerState.position.z);
@@ -1067,7 +1067,7 @@ void handle_top_down_zoom(const mygllib::GLFWInput & input)
 //==============================================================
 // User Input
 //==============================================================
-void handle_function_keys(const mygllib::GLFWInput &input)
+void handle_function_keys(const mygllib::GLFWInput & input)
 {
     static bool tab_down_previous = false;
     static bool grave_down_previous = false;
@@ -1223,8 +1223,8 @@ int main(int argc, char ** argv)
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
     // ----- Create window & GL context -----
-    mygllib::WIN_W = 700;
-    mygllib::WIN_H = 700;
+    mygllib::WIN_W = 1100;
+    mygllib::WIN_H = 800;
     GLFWwindow * window = nullptr;
 
     try
