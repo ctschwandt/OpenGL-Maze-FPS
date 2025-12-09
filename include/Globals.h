@@ -28,6 +28,9 @@ namespace globals
 
     extern float robert_rot_x;
     extern float robert_rot_y;
+
+    extern bool enemy_freeze_active;
+    extern bool enemy_freeze_used_this_run;
 }
 
 #endif // GLOBALS_H
