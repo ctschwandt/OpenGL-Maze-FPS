@@ -650,12 +650,12 @@ void start_new_run(bool resetPlayerStats = true)
 {
     glm::ivec2 playerStartCell = random_start_cell();
 
-    globals::enemy_freeze_active       = false;
+    globals::enemy_freeze_active = false;
     globals::enemy_freeze_used_this_run = false;
 
     maze.init(playerStartCell.x, playerStartCell.y);
-    maze.print();
-    std::cout << std::endl;
+    //maze.print();
+    //std::cout << std::endl;
 
     place_player_at_cell(playerStartCell);
     reset_player_state_for_spawn(resetPlayerStats);

@@ -31,7 +31,7 @@ void mygllib::Keyboard::update_from_input(const GLFWInput & input, float dt)
 
     if (globals::game_state == globals::GameState::ROBERT_CUBE)
     {
-        const float ROT_SPEED_DEG = 90.0f; // degrees per second
+        const float ROT_SPEED_DEG = 180.0f; // degrees per second
 
         if (input.key_down(GLFW_KEY_RIGHT))
         {
