@@ -1068,7 +1068,6 @@ void handle_top_down_zoom(const mygllib::GLFWInput & input)
 //==============================================================
 void handle_function_keys(const mygllib::GLFWInput &input)
 {
-    static bool tab_down_previous    = false;
     static bool freeze_down_previous = false;
     static bool f5_down_previous = false;
 
@@ -1080,13 +1079,10 @@ void handle_function_keys(const mygllib::GLFWInput &input)
     static float     saved_pitch  = 0.0f;
 
     bool tab_down    = input.key_down(GLFW_KEY_TAB);
-    bool freeze_down = input.key_down(GLFW_KEY_F);
+    bool freeze_down = input.key_down(GLFW_KEY_GRAVE_ACCENT);
     bool f5_down = input.key_down(GLFW_KEY_F5);
 
-    if (tab_down && !tab_down_previous)
-    {
-        globals::top_down_view = !globals::top_down_view;
-    }
+    globals::top_down_view = tab_down;
 
     if (freeze_down && !freeze_down_previous)
     {
@@ -1134,7 +1130,6 @@ void handle_function_keys(const mygllib::GLFWInput &input)
             : globals::GameState::MAZE;
     }
 
-    tab_down_previous    = tab_down;
     freeze_down_previous = freeze_down;
     f5_down_previous = f5_down;
 }
