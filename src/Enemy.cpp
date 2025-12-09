@@ -409,13 +409,21 @@ namespace game
         int openCount  = static_cast<int>(openTiles.size());
         int spawnCount = static_cast<int>(openCount * ENEMY_ROOM_RATIO);
 
-        //std::cout << spawnCount << std::endl;
-        
+        // Never spawn more enemies than there are open tiles.
+        if (spawnCount > openCount)
+            spawnCount = openCount;
+
+        // Sample tiles WITHOUT replacement using a partial Fisher–Yates shuffle.
         for (int i = 0; i < spawnCount; ++i)
         {
-            // Pick a random open tile WITH replacement.
-            int choice = std::rand() % openTiles.size();
-            glm::ivec2 tile = openTiles[choice]; // (tr, tc)
+            // Number of remaining tiles we haven't "fixed" yet
+            int remaining    = openCount - i;
+            int choiceOffset = std::rand() % remaining;
+            int choiceIndex  = i + choiceOffset;
+
+            // Bring the chosen tile into position i
+            std::swap(openTiles[i], openTiles[choiceIndex]);
+            glm::ivec2 tile = openTiles[i]; // (tr, tc)
 
             Enemy enemy = make_enemy(pick_enemy_type(weights));
 
@@ -424,7 +432,7 @@ namespace game
                 (static_cast<float>(tile.y) + TILE_OFFSET) * tileScale, // x
                 0.0f,                                                   // y
                 (static_cast<float>(tile.x) + TILE_OFFSET) * tileScale  // z
-            );
+                );
 
             enemies.push_back(enemy);
         }

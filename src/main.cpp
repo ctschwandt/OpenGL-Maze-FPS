@@ -484,8 +484,7 @@ static void init_worldbox_heightmaps()
     glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-// Draw a big inside-view sphere around the camera.
-// Uses immediate mode for simplicity (one-time demo, not perf-critical).
+// draw a big inside-view sphere around the camera
 static void draw_worldbox_sphere()
 {
     if (!g_worldbox_program)
@@ -518,8 +517,8 @@ static void draw_worldbox_sphere()
     glBindTexture(GL_TEXTURE_2D, g_worldbox_heightTexB);
 
     const float radius = 300.0f;   // big enough to enclose maze
-    const int   stacks = 32;
-    const int   slices = 64;
+    const int stacks = 32;
+    const int slices = 64;
 
     for (int i = 0; i < stacks; ++i)
     {
@@ -564,11 +563,11 @@ static void draw_worldbox_sphere()
 // Game globals
 //==============================================================
 Maze maze(5);
-const float TILE_SCALE          = 15.0f;
-const float TOP_DOWN_ZOOM_STEP  = 0.005f;
-const float TOP_DOWN_ZOOM_MIN   = 0.1f;
-const float TOP_DOWN_ZOOM_MAX   = 0.5f;
-float       top_down_zoom       = 0.2f;
+const float TILE_SCALE = 15.0f;
+const float TOP_DOWN_ZOOM_STEP = 0.005f;
+const float TOP_DOWN_ZOOM_MIN = 0.1f;
+const float TOP_DOWN_ZOOM_MAX = 0.5f;
+float top_down_zoom = 0.2f;
 const game::EnemySpawnWeights ENEMY_SPAWN_WEIGHTS{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 bool maze_had_enemies = false;
@@ -1235,6 +1234,21 @@ int main(int argc, char ** argv)
     (void)argc;
     (void)argv;
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
+
+    std::cout << "==================== CONTROLS ====================\n";
+    std::cout << "WASD          - Movement\n";
+    std::cout << "Arrow Keys    - Look around\n";
+    std::cout << "Enter         - Shoot\n";
+    std::cout << "Space         - Jump\n";
+    std::cout << "Left Shift    - Dash\n";
+    std::cout << "Left Ctrl     - Slide\n";
+    std::cout << "TAB           - Toggle Top-Down View\n";
+    std::cout << "M             - Toggle Minimap\n";
+    std::cout << "`             - Toggle Freezing Enemies\n";
+    std::cout << "R             - Restart Run\n";
+    std::cout << "F1            - Toggle Robert Cube Mode\n";
+    std::cout << "ESC           - Quit\n";
+    std::cout << "===================================================\n";
 
     // ----- create window -----
     mygllib::WIN_W = 1100;
