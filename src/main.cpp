@@ -109,26 +109,7 @@ float fbm(vec2 p)
 }
 
 // ---- Palettes ----
-
-// 0: Red / black — dark volcanic red
-vec3 palette_red(float t)
-{
-    float x = t;
-    vec3 a = vec3(0.05, 0.0, 0.0);  // dark red base
-    vec3 b = vec3(0.95, 0.0, 0.0);  // variation only in red
-    vec3 c = vec3(1.0, 1.0, 1.0);
-    vec3 d = vec3(0.0, 0.0, 0.0);
-    return a + b * cos(6.28318 * (c * x + d));
-}
-
-// 1: Grayscale
-vec3 palette_gray(float t)
-{
-    float x = clamp(t, 0.0, 1.0);
-    return vec3(x);
-}
-
-// 2: Night thunder (what you already had)
+// 0: Night thunder
 vec3 palette_night_thunder(float t)
 {
     t = clamp(t, 0.0, 1.0);
@@ -144,20 +125,7 @@ vec3 palette_night_thunder(float t)
     return         mix(teal,        flash,    (x - 0.75) / 0.25);
 }
 
-// 3: Lava orange — hotter, more orange sky
-vec3 palette_lava_orange(float t)
-{
-    float x = clamp(t, 0.0, 1.0);
-    vec3 deep = vec3(0.02, 0.0, 0.0);
-    vec3 mid  = vec3(0.5, 0.1, 0.0);
-    vec3 hot  = vec3(1.0, 0.6, 0.0);
-
-    if (x < 0.4)  return mix(deep, mid,  x / 0.4);
-    if (x < 0.8)  return mix(mid,  hot, (x - 0.4) / 0.4);
-    return         mix(hot, vec3(1.0, 1.0, 1.0), (x - 0.8) / 0.2);
-}
-
-// 4: Smoky ash — dark, desaturated, good for “burned” feel
+// 1: Smoky ash
 vec3 palette_smoke(float t)
 {
     float x = clamp(t, 0.0, 1.0);
@@ -169,20 +137,8 @@ vec3 palette_smoke(float t)
     return        mix(mid,    top, (x - 0.5) / 0.5);
 }
 
-// 5: Hellfire purple — red with a bit of magenta glow
-vec3 palette_hell_purple(float t)
-{
-    float x = clamp(t, 0.0, 1.0);
-    vec3 dark   = vec3(0.02, 0.0, 0.05);
-    vec3 mid    = vec3(0.4, 0.0, 0.2);
-    vec3 bright = vec3(1.0, 0.0, 0.4);
 
-    if (x < 0.4)  return mix(dark,   mid,    x / 0.4);
-    if (x < 0.8)  return mix(mid,    bright, (x - 0.4) / 0.4);
-    return         mix(bright, vec3(1.0, 0.7, 0.9), (x - 0.8) / 0.2);
-}
-
-// Blue sky with cloud highlights — smooth and bright
+// 2: Blue sky
 vec3 palette_sky_clouds(float t)
 {
     t = clamp(t, 0.0, 1.0);
@@ -197,7 +153,7 @@ vec3 palette_sky_clouds(float t)
     // Smoothstep gives the cloud puff softness
     float cloudMask = smoothstep(0.55, 1.0, t);
 
-    // First blend sky vertical gradient
+    // blend sky vertical gradient
     vec3 sky = mix(skyBottom, skyTop, t);
 
     // Then add clouds on top
@@ -206,14 +162,9 @@ vec3 palette_sky_clouds(float t)
 
 vec3 palette(float t, int index)
 {
-    if      (index == 0) return palette_red(t);
-    else if (index == 1) return palette_gray(t);
-    else if (index == 2) return palette_night_thunder(t);
-    else if (index == 3) return palette_lava_orange(t);
-    else if (index == 4) return palette_smoke(t);
-    else if (index == 5) return palette_hell_purple(t);
-    else if (index == 6) return palette_sky_clouds(t);
-    return palette_red(t);
+    if      (index == 0) return palette_night_thunder(t);
+    else if (index == 1) return palette_smoke(t);
+    else return palette_sky_clouds(t);
 }
 
 void main()
@@ -639,14 +590,7 @@ glm::ivec2 random_start_cell()
 
 int get_palette_index(int idx)
 {
-    switch (idx)
-    {
-        case 1: return 2; // grayscale
-        case 2: return 4; // red
-        case 3: return 6; // night thunder
-        default:
-            return -1;
-    }
+    return idx - 1;
 }
 
 void init_textures()
@@ -779,9 +723,10 @@ void compute_visibility_mask(Maze & maze,
         mark_visible(originTr, originTc);
 
     const int   NUM_RAYS = 720;
-    const float FOV      = PI_F * 0.5f;   // 90 degrees
+    const float FOV_DEG  = 100.0f; // 100 degrees
+    const float FOV = FOV_DEG * (PI_F / 180.0f);
     const float HALF_FOV = FOV * 0.5f;
-    const float STEP     = tileScale * 0.25f;
+    const float STEP = tileScale * 0.25f;
 
     for (int i = 0; i < NUM_RAYS; ++i)
     {
