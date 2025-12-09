@@ -36,6 +36,8 @@ namespace game
         bool onGround{true};
         bool dashing{false};
         bool sliding{false};
+        bool enemiesFrozen{false};
+        bool scoreLocked{false};
         float dashTimer{0.0f};
         float slideTimer{0.0f};
 

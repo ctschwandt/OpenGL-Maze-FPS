@@ -436,6 +436,14 @@ namespace game
         for (auto & enemy : enemies)
             enemy.set_previous_position(enemy.pos);
 
+        if (playerState.enemiesFrozen)
+        {
+            for (auto & enemy : enemies)
+                enemy.vel = glm::vec3(0.0f);
+
+            return;
+        }
+
         for (auto & enemy : enemies)
             enemy.update(dt, playerPos, maze);
 

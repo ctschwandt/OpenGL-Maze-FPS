@@ -643,6 +643,8 @@ void reset_player_state_for_spawn(bool resetStats)
         playerState.maxHealth = preservedMaxHealth;
         playerState.score     = preservedScore;
     }
+    playerState.enemiesFrozen = false;
+    playerState.scoreLocked   = false;
     playerState.initialized = false;
 }
 
@@ -1066,10 +1068,8 @@ void handle_top_down_zoom(const mygllib::GLFWInput & input)
 //==============================================================
 void handle_function_keys(const mygllib::GLFWInput &input)
 {
-    static bool f1_down_previous = false;
-    static bool f2_down_previous = false;
-    static bool f3_down_previous = false;
-    static bool f4_down_previous = false;
+    static bool tab_down_previous    = false;
+    static bool freeze_down_previous = false;
     static bool f5_down_previous = false;
 
     static bool has_saved_view    = false;
@@ -1079,27 +1079,20 @@ void handle_function_keys(const mygllib::GLFWInput &input)
     static float     saved_yaw    = 0.0f;
     static float     saved_pitch  = 0.0f;
 
-    bool f1_down = input.key_down(GLFW_KEY_F1);
-    bool f2_down = input.key_down(GLFW_KEY_F2);
-    bool f3_down = input.key_down(GLFW_KEY_F3);
-    bool f4_down = input.key_down(GLFW_KEY_F4);
+    bool tab_down    = input.key_down(GLFW_KEY_TAB);
+    bool freeze_down = input.key_down(GLFW_KEY_F);
     bool f5_down = input.key_down(GLFW_KEY_F5);
 
-    if (f1_down && !f1_down_previous)
-    {
-        globals::draw_plane = !globals::draw_plane;
-    }
-    if (f2_down && !f2_down_previous)
-    {
-        globals::draw_axes = !globals::draw_axes;
-    }
-    if (f3_down && !f3_down_previous)
-    {
-        globals::draw_wire = !globals::draw_wire;
-    }
-    if (f4_down && !f4_down_previous)
+    if (tab_down && !tab_down_previous)
     {
         globals::top_down_view = !globals::top_down_view;
+    }
+
+    if (freeze_down && !freeze_down_previous)
+    {
+        game::PlayerMovement & playerState = game::player_movement_state();
+        playerState.enemiesFrozen = !playerState.enemiesFrozen;
+        playerState.scoreLocked   = true;
     }
 
     if (f5_down && !f5_down_previous)
@@ -1141,10 +1134,8 @@ void handle_function_keys(const mygllib::GLFWInput &input)
             : globals::GameState::MAZE;
     }
 
-    f1_down_previous = f1_down;
-    f2_down_previous = f2_down;
-    f3_down_previous = f3_down;
-    f4_down_previous = f4_down;
+    tab_down_previous    = tab_down;
+    freeze_down_previous = freeze_down;
     f5_down_previous = f5_down;
 }
 
