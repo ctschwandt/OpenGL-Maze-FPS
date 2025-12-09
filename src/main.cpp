@@ -1126,25 +1126,29 @@ void handle_function_keys(const mygllib::GLFWInput & input)
 //==============================================================
 void display()
 {
+    // ================== ROBERT CUBE MODE ==================
     if (globals::game_state == globals::GameState::ROBERT_CUBE)
     {
         glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+        // use a local camera instead of maze camera
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
-        mygllib::SingletonView::getInstance()->lookat();
 
-        glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_COLOR_BUFFER_BIT);
+        glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+        glEnable(GL_DEPTH_TEST);
         glDisable(GL_LIGHTING);
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, globals::robert_texture);
         glColor3f(1.0f, 1.0f, 1.0f);
 
         glPushMatrix();
+        glTranslatef(0.0f, 0.0f, -5.0f);
         glRotatef(globals::robert_rot_x, 1.0f, 0.0f, 0.0f);
         glRotatef(globals::robert_rot_y, 0.0f, 1.0f, 0.0f);
-        draw_textured_box(0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f);
+        draw_textured_box(0.0f, 0.0f, 0.0f, 2.0f, 2.0f, 2.0f);
         glPopMatrix();
 
         glBindTexture(GL_TEXTURE_2D, 0);
@@ -1152,6 +1156,7 @@ void display()
         return;
     }
 
+    // ================== MAZE MODE ==================//    
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1159,12 +1164,12 @@ void display()
     glLoadIdentity();
     mygllib::SingletonView::getInstance()->lookat();
 
-    // ----- Worldbox sphere (drawn first, behind everything) -----
+    // ----- worldbox sphere -----
     draw_worldbox_sphere();
 
     glLineWidth(1.0f);
 
-    // ----- Maze floor (textured, unlit, per visible cell) -----
+    // ----- maze floor -----
     glPushAttrib(GL_LIGHTING_BIT | GL_ENABLE_BIT);
 
     glDisable(GL_LIGHTING);
@@ -1182,13 +1187,7 @@ void display()
     glBindTexture(GL_TEXTURE_2D, 0);
     glPopAttrib();
 
-    // ----- Axes -----
-    if (globals::draw_axes)
-    {
-        mygllib::draw_axes();
-    }
-
-    // ----- Maze walls (textured, unlit) -----
+    // ----- maze walls -----
     glPushMatrix();
     {
         glScalef(TILE_SCALE, TILE_SCALE, TILE_SCALE);
@@ -1209,7 +1208,7 @@ void display()
     }
     glPopMatrix();
 
-    // ----- Player, enemies, projectiles -----
+    // ----- player, enemies, projectiles -----
     draw_player_avatar(game::player_movement_state());
     if (globals::top_down_view)
         draw_player_direction_indicator(game::player_movement_state());
@@ -1237,7 +1236,7 @@ int main(int argc, char ** argv)
     (void)argv;
     std::srand(static_cast<unsigned int>(std::time(nullptr)));
 
-    // ----- Create window & GL context -----
+    // ----- create window -----
     mygllib::WIN_W = 1100;
     mygllib::WIN_H = 800;
     GLFWwindow * window = nullptr;
@@ -1252,7 +1251,7 @@ int main(int argc, char ** argv)
         return -1;
     }
 
-    // turn on v-sync (prevents tearing)
+    // turn on v-sync
     glfwSwapInterval(1);
 
     // Initial reshape
