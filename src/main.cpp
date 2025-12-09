@@ -1072,10 +1072,12 @@ void handle_function_keys(const mygllib::GLFWInput &input)
     static bool tab_down_previous = false;
     static bool grave_down_previous = false;
     static bool r_down_previous = false;
+    static bool m_down_previous = false;
 
     bool tab_down = input.key_down(GLFW_KEY_TAB);
     bool grave_down = input.key_down(GLFW_KEY_GRAVE_ACCENT);
     bool r_down = input.key_down(GLFW_KEY_R);
+    bool m_down = input.key_down(GLFW_KEY_M);
 
     if (tab_down && !tab_down_previous)
     {
@@ -1093,9 +1095,15 @@ void handle_function_keys(const mygllib::GLFWInput &input)
         start_new_run();
     }
 
+    if (m_down && !m_down_previous)
+    {
+        globals::draw_minimap = !globals::draw_minimap;
+    }
+
     tab_down_previous = tab_down;
     grave_down_previous = grave_down;
     r_down_previous = r_down;
+    m_down_previous = m_down;
 }
 
 //==============================================================

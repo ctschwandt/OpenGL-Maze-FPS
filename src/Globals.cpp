@@ -8,6 +8,7 @@ namespace globals
     bool draw_plane = false;
     bool draw_axes = false;
     bool draw_wire = false;
+    bool draw_minimap = true;
     bool top_down_view = false;
 
     GLuint floor_texture = 0;

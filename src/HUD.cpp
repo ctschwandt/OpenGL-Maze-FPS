@@ -2,6 +2,7 @@
 
 #include "Enemy.h"
 #include "Player.h"
+#include "Globals.h"
 #include "mygllib/SingletonView.h"
 #include "mygllib/config.h"
 
@@ -287,7 +288,8 @@ namespace game
 
         const game::PlayerMovement & playerState = game::player_movement_state();
         draw_health_and_score(playerState);
-        draw_minimap(maze, tileScale);
+        if (globals::draw_minimap)
+            draw_minimap(maze, tileScale);
 
         glPopMatrix();
         glMatrixMode(GL_PROJECTION);
