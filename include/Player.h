@@ -38,6 +38,8 @@ namespace game
         bool sliding{false};
         float dashTimer{0.0f};
         float slideTimer{0.0f};
+        bool freezeModeActive{false};
+        bool scoreLockedThisRun{false};
 
         // Movement tuning parameters
         float maxGroundSpeed   = 15.0f;

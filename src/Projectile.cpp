@@ -77,7 +77,7 @@ namespace game
                 int oldHealth = enemy.health;
                 enemy.health -= p.damage;
 
-                if (enemy.health <= 0 && oldHealth > 0)
+                if (enemy.health <= 0 && oldHealth > 0 && !playerState.scoreLockedThisRun)
                     playerState.score += score_for_enemy(enemy.type());
 
                 p.remainingLife = -1.0f;
