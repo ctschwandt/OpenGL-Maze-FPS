@@ -59,6 +59,21 @@ namespace game
             return distance2 <= enemy.radius * enemy.radius;
         };
 
+        auto hits_player = [&](const Projectile & p) -> bool
+        {
+            float minY = playerState.groundHeight;
+            float maxY = playerState.groundHeight + PLAYER_BODY_HEIGHT;
+
+            if (p.position.y < minY || p.position.y > maxY)
+                return false;
+
+            glm::vec2 diff(p.position.x - playerState.position.x,
+                           p.position.z - playerState.position.z);
+
+            float distance2 = glm::dot(diff, diff);
+            return distance2 <= PLAYER_RADIUS * PLAYER_RADIUS;
+        };
+
         for (auto & p : projectiles)
         {
             p.position      += p.velocity * dt;
@@ -70,22 +85,33 @@ namespace game
             if (p.remainingLife <= 0.0f)
                 continue;
 
-            for (auto & enemy : enemies)
+            if (p.fromPlayer)
             {
-                if (!hits_enemy(p, enemy))
-                    continue;
-
-                int oldHealth = enemy.health;
-                enemy.health -= p.damage;
-
-                if (enemy.health <= 0 && oldHealth > 0 &&
-                    !globals::enemy_freeze_used_this_run)
+                for (auto & enemy : enemies)
                 {
-                    playerState.score += score_for_enemy(enemy.type());
-                }
+                    if (!hits_enemy(p, enemy))
+                        continue;
 
-                p.remainingLife = -1.0f;
-                break;
+                    int oldHealth = enemy.health;
+                    enemy.health -= p.damage;
+
+                    if (enemy.health <= 0 && oldHealth > 0 &&
+                        !globals::enemy_freeze_used_this_run)
+                    {
+                        playerState.score += score_for_enemy(enemy.type());
+                    }
+
+                    p.remainingLife = -1.0f;
+                    break;
+                }
+            }
+            else
+            {
+                if (hits_player(p))
+                {
+                    playerState.health = std::max(0, playerState.health - p.damage);
+                    p.remainingLife    = -1.0f;
+                }
             }
         }
 

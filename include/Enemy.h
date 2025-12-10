@@ -50,6 +50,9 @@ namespace game
         glm::ivec2 targetTile_{ 0, 0 };
         std::size_t pathIndex_ = 0;
 
+    private:
+        float fireCooldown_{0.0f};
+
         void set_collision_size(float halfWidth, float halfDepth)
         {
             collisionHalfWidth_ = halfWidth;

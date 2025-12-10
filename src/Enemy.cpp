@@ -12,6 +12,7 @@
 #include <glm/gtx/norm.hpp>
 
 #include "Draw.h"
+#include "Projectile.h"
 #include "Maze.h"
 #include "Player.h"
 #include "Globals.h"
@@ -24,6 +25,7 @@ namespace game
         pathSpeed_ = pathSpeed;
         chaseSpeed_ = chaseSpeed;
         health = baseHealth;
+        fireCooldown_ = 0.0f;
     }
 
     CylinderBot::CylinderBot()
@@ -65,6 +67,11 @@ namespace game
         constexpr float ENEMY_ROOM_RATIO = 1.0f; // 1 enemy per open tile (total), excluding player tile
         constexpr int   MAX_PATH_LENGTH  = 9;
         constexpr float CYLINDER_BOT_CONTACT_DAMAGE_PER_SECOND = 10.0f;
+        constexpr float SPHERE_DRONE_HOVER_Y          = 5.0f;
+        constexpr float SPHERE_DRONE_FIRE_RANGE       = TILE_SCALE * 2.5f;
+        constexpr float SPHERE_DRONE_FIRE_COOLDOWN    = 1.5f;
+        constexpr float SPHERE_DRONE_PROJECTILE_SPEED = 40.0f;
+        constexpr int   SPHERE_DRONE_PROJECTILE_DAMAGE = 10;
 
         Enemy make_enemy(EnemyType type)
         {
@@ -84,13 +91,10 @@ namespace game
 
         EnemyType pick_enemy_type(const EnemySpawnWeights & weights)
         {
-            return EnemyType::CylinderBot;
-            std::array<std::pair<EnemyType, float>, 4> weightedTypes =
+            std::array<std::pair<EnemyType, float>, 2> weightedTypes =
             {{
                 { EnemyType::CylinderBot,    weights.cylinderBot },
-                { EnemyType::SphereDrone,    weights.sphereDrone },
-                { EnemyType::CubeTurret,     weights.cubeTurret },
-                { EnemyType::PyramidCharger, weights.pyramidCharger }
+                { EnemyType::SphereDrone,    weights.sphereDrone }
             }};
 
             float totalWeight = std::accumulate(
@@ -324,6 +328,65 @@ namespace game
         }
 
         case EnemyType::SphereDrone:
+        {
+            pos.y = SPHERE_DRONE_HOVER_Y;
+
+            glm::vec3 toPlayer = playerPos - pos;
+            glm::vec3 toPlayerHoriz(toPlayer.x, 0.0f, toPlayer.z);
+            float distanceHoriz = glm::length(toPlayerHoriz);
+            glm::vec3 dir = (distanceHoriz > 0.0001f)
+                ? toPlayerHoriz / distanceHoriz
+                : glm::vec3(1.0f, 0.0f, 0.0f);
+
+            constexpr float preferredDist = TILE_SCALE * 1.5f;
+            if (distanceHoriz > preferredDist * 1.1f)
+                vel = dir * pathSpeed_;
+            else if (distanceHoriz < preferredDist * 0.9f)
+                vel = -dir * pathSpeed_;
+            else
+                vel = glm::vec3(0.0f);
+
+            glm::vec3 newPos = pos + vel * dt;
+
+            if (collides_with_wall(newPos.x, pos.z, collisionHalfWidth_, maze))
+            {
+                newPos.x = pos.x;
+                vel.x    = 0.0f;
+            }
+
+            if (collides_with_wall(newPos.x, newPos.z, collisionHalfWidth_, maze))
+            {
+                newPos.z = pos.z;
+                vel.z    = 0.0f;
+            }
+
+            pos = newPos;
+            pos.y = SPHERE_DRONE_HOVER_Y;
+
+            yaw = std::atan2(playerPos.z - pos.z, playerPos.x - pos.x);
+
+            fireCooldown_ = std::max(0.0f, fireCooldown_ - dt);
+            float distanceToPlayer = glm::length(toPlayer);
+
+            if (fireCooldown_ <= 0.0f && distanceToPlayer < SPHERE_DRONE_FIRE_RANGE)
+            {
+                glm::vec3 fireDir = (distanceToPlayer > 0.0001f)
+                    ? (toPlayer / distanceToPlayer)
+                    : glm::vec3(1.0f, 0.0f, 0.0f);
+
+                Projectile shot;
+                shot.fromPlayer = false;
+                shot.damage     = SPHERE_DRONE_PROJECTILE_DAMAGE;
+                shot.position   = pos + fireDir * (radius * 0.8f);
+                shot.velocity   = fireDir * SPHERE_DRONE_PROJECTILE_SPEED;
+
+                active_projectiles().push_back(shot);
+                fireCooldown_ = SPHERE_DRONE_FIRE_COOLDOWN;
+            }
+
+            break;
+        }
+
         case EnemyType::CubeTurret:
         case EnemyType::PyramidCharger:
         default:
@@ -361,6 +424,22 @@ namespace game
             }
 
         case EnemyType::SphereDrone:
+        {
+            glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT | GL_ENABLE_BIT | GL_TEXTURE_BIT);
+            glDisable(GL_LIGHTING);
+            glDisable(GL_CULL_FACE);
+            glDisable(GL_TEXTURE_2D);
+
+            glPushMatrix();
+            glTranslatef(pos.x, pos.y, pos.z);
+            glColor3f(0.0f, 1.0f, 0.9f);
+            draw_sphere(radius, 20, 32);
+            glPopMatrix();
+
+            glPopAttrib();
+            break;
+        }
+
         case EnemyType::CubeTurret:
         case EnemyType::PyramidCharger:
         default:

@@ -11,6 +11,8 @@ namespace game
 
     // Draw an axis-aligned rectangular prism centered on the origin.
     void draw_box(float width, float height, float depth);
+
+    void draw_sphere(float radius, int stacks = 16, int slices = 32);
 }
 
 #endif // DRAW_H
