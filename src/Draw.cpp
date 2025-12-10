@@ -180,9 +180,15 @@ namespace game
                 float x2 = r2 * cosTheta;
                 float z2 = r2 * sinTheta;
 
+                float s  = static_cast<float>(j) / static_cast<float>(slices);
+                float t1 = static_cast<float>(i) / static_cast<float>(stacks);
+                float t2 = static_cast<float>(i + 1) / static_cast<float>(stacks);
+
+                glTexCoord2f(s, t2);
                 glNormal3f(x2 / radius, y2 / radius, z2 / radius);
                 glVertex3f(x2, y2, z2);
 
+                glTexCoord2f(s, t1);
                 glNormal3f(x1 / radius, y1 / radius, z1 / radius);
                 glVertex3f(x1, y1, z1);
             }

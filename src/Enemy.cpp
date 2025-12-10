@@ -329,22 +329,76 @@ namespace game
 
         case EnemyType::SphereDrone:
         {
+            constexpr float AGGRESSIVE_RANGE = TILE_SCALE;
             pos.y = SPHERE_DRONE_HOVER_Y;
 
             glm::vec3 toPlayer = playerPos - pos;
             glm::vec3 toPlayerHoriz(toPlayer.x, 0.0f, toPlayer.z);
             float distanceHoriz = glm::length(toPlayerHoriz);
-            glm::vec3 dir = (distanceHoriz > 0.0001f)
-                ? toPlayerHoriz / distanceHoriz
-                : glm::vec3(1.0f, 0.0f, 0.0f);
 
-            constexpr float preferredDist = TILE_SCALE * 1.5f;
-            if (distanceHoriz > preferredDist * 1.1f)
-                vel = dir * pathSpeed_;
-            else if (distanceHoriz < preferredDist * 0.9f)
-                vel = -dir * pathSpeed_;
+            int curTr    = static_cast<int>(std::floor(pos.z / TILE_SCALE));
+            int curTc    = static_cast<int>(std::floor(pos.x / TILE_SCALE));
+            int playerTr = static_cast<int>(std::floor(playerPos.z / TILE_SCALE));
+            int playerTc = static_cast<int>(std::floor(playerPos.x / TILE_SCALE));
+            glm::ivec2 playerTile(playerTr, playerTc);
+
+            if (distanceHoriz < AGGRESSIVE_RANGE)
+            {
+                path_.clear();
+                pathIndex_      = 0;
+                lastPlayerTile_ = { -1, -1 };
+
+                glm::vec3 dir = (distanceHoriz > 0.0001f)
+                    ? toPlayerHoriz / distanceHoriz
+                    : glm::vec3(0.0f, 0.0f, 0.0f);
+
+                vel = dir * chaseSpeed_;
+            }
             else
-                vel = glm::vec3(0.0f);
+            {
+                bool reachedTargetTile = (glm::ivec2(curTr, curTc) == targetTile_);
+                if (path_.empty() || playerTile != lastPlayerTile_ || reachedTargetTile)
+                {
+                    std::vector<glm::ivec2> newPath;
+                    bool hasPath          = maze.findPath(curTr, curTc, playerTr, playerTc, newPath);
+                    bool pathShortEnough  = hasPath && static_cast<int>(newPath.size()) <= MAX_PATH_LENGTH;
+                    if (pathShortEnough)
+                    {
+                        path_           = newPath;
+                        lastPlayerTile_ = playerTile;
+                        if (path_.size() > 1)
+                        {
+                            pathIndex_  = 1;
+                            targetTile_ = path_[pathIndex_];
+                        }
+                        else
+                        {
+                            pathIndex_  = 0;
+                            targetTile_ = playerTile;
+                        }
+                    }
+                    else
+                    {
+                        path_.clear();
+                        pathIndex_      = 0;
+                        targetTile_     = { curTr, curTc };
+                        lastPlayerTile_ = { -1, -1 };
+                        vel             = glm::vec3(0.0f);
+                        pos.y           = SPHERE_DRONE_HOVER_Y;
+                        return;
+                    }
+                }
+
+                float targetCenterX = (static_cast<float>(targetTile_.y) + 0.5f) * TILE_SCALE;
+                float targetCenterZ = (static_cast<float>(targetTile_.x) + 0.5f) * TILE_SCALE;
+                glm::vec3 targetPos(targetCenterX, SPHERE_DRONE_HOVER_Y, targetCenterZ);
+                glm::vec3 dir       = targetPos - pos;
+                dir.y               = 0.0f;
+                if (glm::length2(dir) > 0.0001f)
+                    dir = glm::normalize(dir);
+
+                vel = dir * pathSpeed_;
+            }
 
             glm::vec3 newPos = pos + vel * dt;
 
@@ -428,14 +482,17 @@ namespace game
             glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT | GL_ENABLE_BIT | GL_TEXTURE_BIT);
             glDisable(GL_LIGHTING);
             glDisable(GL_CULL_FACE);
-            glDisable(GL_TEXTURE_2D);
+            glEnable(GL_TEXTURE_2D);
+            glBindTexture(GL_TEXTURE_2D, globals::liow_texture);
+            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
             glPushMatrix();
             glTranslatef(pos.x, pos.y, pos.z);
-            glColor3f(0.0f, 1.0f, 0.9f);
+            glColor3f(1.0f, 1.0f, 1.0f);
             draw_sphere(radius, 20, 32);
             glPopMatrix();
 
+            glBindTexture(GL_TEXTURE_2D, 0);
             glPopAttrib();
             break;
         }

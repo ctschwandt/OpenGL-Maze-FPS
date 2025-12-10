@@ -25,6 +25,7 @@ namespace globals
 
     extern GLuint robert_texture;
     extern GLuint landon_texture;
+    extern GLuint liow_texture;
 
     extern GameState game_state;
 
