@@ -338,20 +338,24 @@ namespace game
         {
             case EnemyType::CylinderBot:
             {
-                glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT | GL_ENABLE_BIT);
-                
+                glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT | GL_ENABLE_BIT | GL_TEXTURE_BIT);
+
                 glDisable(GL_LIGHTING);
                 glDisable(GL_CULL_FACE);
+                glEnable(GL_TEXTURE_2D);
+                glBindTexture(GL_TEXTURE_2D, globals::landon_texture);
+                glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
                 glPushMatrix();
                 glTranslatef(pos.x, pos.y + (height * 0.5f), pos.z);
                 glRotatef(yaw * 180.0f / static_cast<float>(M_PI), 0.0f, 1.0f, 0.0f);
 
-                glColor3f(0.2f, 0.6f, 1.0f);
-                draw_cylinder(radius, height, 24);
+                glColor3f(1.0f, 1.0f, 1.0f);
+                draw_textured_cylinder(radius, height, 24);
 
                 glPopMatrix();
 
+                glBindTexture(GL_TEXTURE_2D, 0);
                 glPopAttrib();
                 break;
             }

@@ -15,6 +15,7 @@ namespace globals
     GLuint wall_texture = 0;
 
     GLuint robert_texture = 0;
+    GLuint landon_texture = 0;
 
     GameState game_state = GameState::MAZE;
 

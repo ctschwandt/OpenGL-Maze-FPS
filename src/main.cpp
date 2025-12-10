@@ -807,6 +807,7 @@ void init()
     glEnable(GL_TEXTURE_2D);
 
     globals::robert_texture = load_texture_2d("assets/textures/robert.png");
+    globals::landon_texture = load_texture_2d("assets/textures/landon.JPG");
 
     // --- GLEW and worldbox shader ---
     GLenum err = glewInit();
