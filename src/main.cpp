@@ -27,6 +27,7 @@
 #include "Texture.h"
 #include "Visibility.h"
 #include "Worldbox.h"
+#include "mygllib/gl3d.h"
 #include "mygllib/GLFWInput.h"
 #include "mygllib/Keyboard.h"
 #include "mygllib/Mouse.h"

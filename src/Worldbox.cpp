@@ -1,3 +1,5 @@
+// File: Worldbox.cpp
+
 #include "Worldbox.h"
 
 #include <GL/glew.h>
@@ -113,7 +115,6 @@ vec3 palette_smoke(float t)
     return        mix(mid,    top, (x - 0.5) / 0.5);
 }
 
-
 // 2: Blue sky
 vec3 palette_sky_clouds(float t)
 {
@@ -140,8 +141,56 @@ vec3 palette(float t, int index)
 {
     if      (index == 0) return palette_night_thunder(t);
     else if (index == 1) return palette_smoke(t);
-    else return palette_sky_clouds(t);
+    else                 return palette_sky_clouds(t);
 }
+
+void main()
+{
+    vec3 dir = normalize(vDir);
+    float t;
+
+    if (uUseDiamond == 0)
+    {
+        // --- fBm / plasma mode ---
+        vec2 p = dir.xz * 4.0;
+        float time = uTime * 0.25;
+
+        float n    = fbm(p + vec2(time * 0.7,  time * 0.5));
+        float warp = fbm(p * 2.5 + vec2(-time * 0.3, time * 0.2));
+        t          = n + 0.5 * warp;   // ~[0,2]
+
+        // Normalize to [0,1] with a bit of contrast
+        t = (t - 0.5) * 0.8 + 0.5;
+        t = clamp(t, 0.0, 1.0);
+    }
+    else
+    {
+        // --- Diamond–Square heightmap mode ---
+        const float PI = 3.14159265;
+
+        // Rotate sampling direction to move seam/poles to less noticeable locations
+        mat3 rotX = mat3(
+            1.0, 0.0,  0.0,
+            0.0, 0.0, -1.0,
+            0.0, 1.0,  0.0
+        );
+        vec3 dirMap = rotX * dir;
+
+        float u = atan(dirMap.z, dirMap.x) / (2.0 * PI) + 0.5;
+        float v = acos(clamp(dirMap.y, -1.0, 1.0)) / PI;
+        vec2 uv = vec2(u, v);
+
+        float h1 = texture2D(uDiamondTex1, uv).r;
+        float h2 = texture2D(uDiamondTex2, uv).r;
+        float h  = mix(h1, h2, clamp(uBlend, 0.0, 1.0));
+
+        t = clamp(h, 0.0, 1.0);
+    }
+
+    vec3 color = palette(t, uPaletteIndex);
+    gl_FragColor = vec4(color, 1.0);
+}
+)";
 
 //==============================================================
 // Shader helpers
@@ -156,7 +205,7 @@ GLint  g_worldbox_uDiamondTex2 = -1;
 GLint  g_worldbox_uBlend       = -1;
 
 float  g_world_time_sec         = 0.0f;
-int    g_worldbox_palette_index = 2;   // 0=red,1=gray,2=night thunder
+int    g_worldbox_palette_index = 2;   // 0=night,1=smoke,2=sky
 int    g_worldbox_useDiamond    = 0;   // 0 = fBm, 1 = Diamond-Square
 
 // Diamond–Square textures for the worldbox
@@ -490,6 +539,10 @@ void draw_worldbox_sphere()
     glPopAttrib();
 }
 } // namespace
+
+//==============================================================
+// Public API
+//==============================================================
 
 void init()
 {
