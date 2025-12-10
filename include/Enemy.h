@@ -38,6 +38,12 @@ namespace game
         virtual void update(float dt, const glm::vec3 & playerPos, const Maze & maze);
         virtual void draw() const;
 
+        void set_collision_size(float halfWidth, float halfDepth)
+        {
+            collisionHalfWidth_ = halfWidth;
+            collisionHalfDepth_ = halfDepth;
+        }
+
     protected:
         glm::vec3 prevPos{ 0.0f };
         EnemyType type_;
@@ -52,12 +58,6 @@ namespace game
 
     private:
         float fireCooldown_{0.0f};
-
-        void set_collision_size(float halfWidth, float halfDepth)
-        {
-            collisionHalfWidth_ = halfWidth;
-            collisionHalfDepth_ = halfDepth;
-        }
     };
 
     struct EnemySpawnWeights
