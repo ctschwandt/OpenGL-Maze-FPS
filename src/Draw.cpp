@@ -49,6 +49,60 @@ namespace game
         glEnd();
     }
 
+    void draw_textured_cylinder(float radius, float height, int segments)
+    {
+        float halfHeight = height * 0.5f;
+
+        glBegin(GL_TRIANGLE_FAN);
+        glNormal3f(0.0f, 1.0f, 0.0f);
+        glTexCoord2f(0.5f, 0.5f);
+        glVertex3f(0.0f, halfHeight, 0.0f);
+        for (int i = 0; i <= segments; ++i)
+        {
+            float theta = static_cast<float>(i) / static_cast<float>(segments) * 2.0f * static_cast<float>(M_PI);
+            float x = radius * std::cos(theta);
+            float z = radius * std::sin(theta);
+            float u = 0.5f + 0.5f * std::cos(theta);
+            float v = 0.5f + 0.5f * std::sin(theta);
+            glTexCoord2f(u, v);
+            glVertex3f(x, halfHeight, z);
+        }
+        glEnd();
+
+        glBegin(GL_TRIANGLE_FAN);
+        glNormal3f(0.0f, -1.0f, 0.0f);
+        glTexCoord2f(0.5f, 0.5f);
+        glVertex3f(0.0f, -halfHeight, 0.0f);
+        for (int i = segments; i >= 0; --i)
+        {
+            float theta = static_cast<float>(i) / static_cast<float>(segments) * 2.0f * static_cast<float>(M_PI);
+            float x = radius * std::cos(theta);
+            float z = radius * std::sin(theta);
+            float u = 0.5f + 0.5f * std::cos(theta);
+            float v = 0.5f + 0.5f * std::sin(theta);
+            glTexCoord2f(u, v);
+            glVertex3f(x, -halfHeight, z);
+        }
+        glEnd();
+
+        glBegin(GL_TRIANGLE_STRIP);
+        for (int i = 0; i <= segments; ++i)
+        {
+            float theta = static_cast<float>(i) / static_cast<float>(segments) * 2.0f * static_cast<float>(M_PI);
+            float cosTheta = std::cos(theta);
+            float sinTheta = std::sin(theta);
+            float x = radius * cosTheta;
+            float z = radius * sinTheta;
+            float u = static_cast<float>(i) / static_cast<float>(segments);
+            glTexCoord2f(u, 0.0f);
+            glNormal3f(cosTheta, 0.0f, sinTheta);
+            glVertex3f(x, -halfHeight, z);
+            glTexCoord2f(u, 1.0f);
+            glVertex3f(x, halfHeight, z);
+        }
+        glEnd();
+    }
+
     void draw_box(float width, float height, float depth)
     {
         const float hx = width * 0.5f;
