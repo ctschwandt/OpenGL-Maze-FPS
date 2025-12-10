@@ -319,7 +319,7 @@ namespace game
             pos = newPos;
             pos.y = GROUND_Y;
 
-            yaw = std::atan2(playerPos.z - pos.z, playerPos.x - pos.x);
+            yaw = std::atan2(playerPos.x - pos.x, playerPos.z - pos.z) + M_PI / 2;
             break;
         }
 

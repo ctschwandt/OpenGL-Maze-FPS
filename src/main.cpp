@@ -497,7 +497,7 @@ static void draw_worldbox_sphere()
     glDepthMask(GL_FALSE);
     glEnable(GL_DEPTH_TEST);
     glDisable(GL_TEXTURE_2D);
-    glDisable(GL_CULL_FACE); // render both sides, we're inside
+    glDisable(GL_CULL_FACE); // render both sides, it's inside
 
     glUseProgram(g_worldbox_program);
 
@@ -516,7 +516,7 @@ static void draw_worldbox_sphere()
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, g_worldbox_heightTexB);
 
-    const float radius = 300.0f;   // big enough to enclose maze
+    const float radius = 350.0f;   // big enough to enclose maze
     const int stacks = 32;
     const int slices = 64;
 
