@@ -25,47 +25,43 @@ namespace game
     class Enemy : public Actor
     {
     public:
-        Enemy(EnemyType type, float pathSpeed, float chaseSpeed, int baseHealth);
+        Enemy(EnemyType type, float path_speed, float chase_speed, int base_health);
         virtual ~Enemy() = default;
 
-        EnemyType type() const { return type_; }
-        float path_speed() const { return pathSpeed_; }
-        float chase_speed() const { return chaseSpeed_; }
+        EnemyType type() const;
+        float path_speed() const;
+        float chase_speed() const;
 
-        glm::vec3 previous_position() const { return prevPos; }
-        void set_previous_position(const glm::vec3 & pos) { prevPos = pos; }
+        glm::vec3 previous_position() const;
+        void set_previous_position(const glm::vec3 & pos);
 
-        virtual void update(float dt, const glm::vec3 & playerPos, const Maze & maze);
+        virtual void update(float dt, const glm::vec3 & player_pos, const Maze & maze);
         virtual void draw() const;
 
-        void set_collision_size(float halfWidth, float halfDepth)
-        {
-            collisionHalfWidth_ = halfWidth;
-            collisionHalfDepth_ = halfDepth;
-        }
+        void set_collision_size(float half_width, float half_depth);
 
     protected:
-        glm::vec3 prevPos{ 0.0f };
+        glm::vec3 prev_pos{ 0.0f };
         EnemyType type_;
-        float pathSpeed_  = 0.0f;
-        float chaseSpeed_ = 0.0f;
-        float collisionHalfWidth_ = 0.5f;
-        float collisionHalfDepth_ = 0.5f;
+        float path_speed_ = 0.0f;
+        float chase_speed_ = 0.0f;
+        float collision_half_width_ = 0.5f;
+        float collision_half_depth_ = 0.5f;
         std::vector<glm::ivec2> path_;
-        glm::ivec2 lastPlayerTile_{ -1, -1 };
-        glm::ivec2 targetTile_{ 0, 0 };
-        std::size_t pathIndex_ = 0;
+        glm::ivec2 last_player_tile_{ -1, -1 };
+        glm::ivec2 target_tile_{ 0, 0 };
+        std::size_t path_index_ = 0;
 
     private:
-        float fireCooldown_{0.0f};
+        float fire_cooldown_{ 0.0f };
     };
 
     struct EnemySpawnWeights
     {
-        float cylinderBot     = 1.0f;
-        float sphereDrone     = 1.0f;
-        float cubeTurret      = 1.0f;
-        float pyramidCharger  = 1.0f;
+        float cylinder_bot = 1.0f;
+        float sphere_drone = 1.0f;
+        float cube_turret = 1.0f;
+        float pyramid_charger = 1.0f;
     };
 
     class CylinderBot : public Enemy
@@ -94,11 +90,11 @@ namespace game
 
     std::vector<Enemy> & active_enemies();
     void spawn_enemies(const Maze & maze,
-                       float tileScale,
-                       const glm::ivec2 & playerStartCell,
+                       float tile_scale,
+                       const glm::ivec2 & player_start_cell,
                        const EnemySpawnWeights & weights);
-    void update_enemies(float dt, game::PlayerMovement & playerState, const Maze & maze);
+    void update_enemies(float dt, game::PlayerMovement & player_state, const Maze & maze);
     void draw_enemies(const std::vector<Enemy> & enemies);
-}
+} // namespace game
 
 #endif // ENEMY_H
