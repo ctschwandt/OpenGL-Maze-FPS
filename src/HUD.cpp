@@ -5,6 +5,7 @@
 #include "Globals.h"
 #include "mygllib/SingletonView.h"
 #include "mygllib/config.h"
+#include "Visibility.h"
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -18,9 +19,6 @@
 
 #include <glm/gtx/norm.hpp>
 #include <glm/vec3.hpp>
-
-// Visibility buffer defined in main.cpp
-extern std::vector<bool> g_visible_tiles;
 
 namespace
 {
@@ -193,10 +191,7 @@ namespace
                     continue;
 
                 bool wall = maze.is_wall_tile(tr, tc);
-                bool visible = false;
-                int idx = tr * maze.tiles_n + tc;
-                if (idx >= 0 && idx < static_cast<int>(g_visible_tiles.size()))
-                    visible = g_visible_tiles[idx];
+                bool visible = visibility::tile_visible(maze, tr, tc);
 
                 if (wall)
                     glColor3f(0.2f, 0.2f, 0.2f);
