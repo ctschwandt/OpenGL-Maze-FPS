@@ -62,16 +62,17 @@ namespace game
 
     namespace
     {
-        constexpr float TILE_OFFSET      = 0.5f;
-        constexpr float TILE_SCALE       = 15.0f;
-        constexpr float ENEMY_ROOM_RATIO = 1.0f; // 1 enemy per open tile (total), excluding player tile
-        constexpr int   MAX_PATH_LENGTH  = 9;
-        constexpr float CYLINDER_BOT_CONTACT_DAMAGE_PER_SECOND = 10.0f;
-        constexpr float SPHERE_DRONE_HOVER_Y          = 5.0f;
-        constexpr float SPHERE_DRONE_FIRE_RANGE       = TILE_SCALE * 2.5f;
-        constexpr float SPHERE_DRONE_FIRE_COOLDOWN    = 1.5f;
-        constexpr float SPHERE_DRONE_PROJECTILE_SPEED = 40.0f;
-        constexpr int   SPHERE_DRONE_PROJECTILE_DAMAGE = 10;
+        const float TILE_OFFSET = 0.5f;
+        const float TILE_SCALE = 15.0f;
+        const float ENEMY_ROOM_RATIO = 0.6f;
+        const int   MAX_PATH_LENGTH = 9;
+        const float CYLINDER_BOT_CONTACT_DAMAGE_PER_SECOND = 10.0f;
+        const float SPHERE_DRONE_HOVER_Y = 1.5f;
+        const float SPHERE_DRONE_FIRE_RANGE = TILE_SCALE * 2.5f;
+        const float SPHERE_DRONE_DESIRED_RANGE = SPHERE_DRONE_FIRE_RANGE * 0.8f;
+        const float SPHERE_DRONE_FIRE_COOLDOWN = 1.5f;
+        const float SPHERE_DRONE_PROJECTILE_SPEED = 10.0f;
+        const int   SPHERE_DRONE_PROJECTILE_DAMAGE = 10;
 
         Enemy make_enemy(EnemyType type)
         {
@@ -107,7 +108,7 @@ namespace game
             if (totalWeight <= 0.0f)
                 return EnemyType::CylinderBot;
 
-            float roll   = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
+            float roll = static_cast<float>(std::rand()) / static_cast<float>(RAND_MAX);
             float target = roll * totalWeight;
 
             float accumulated = 0.0f;
@@ -145,7 +146,7 @@ namespace game
 
         void resolve_enemy_collisions(std::vector<Enemy> & enemies, const Maze & maze)
         {
-            constexpr float MIN_DIST_SQ_EPSILON = 0.0001f;
+            const float MIN_DIST_SQ_EPSILON = 0.0001f;
 
             const std::size_t count = enemies.size();
             for (std::size_t i = 0; i < count; ++i)
@@ -229,8 +230,8 @@ namespace game
         {
         case EnemyType::CylinderBot:
         {
-            constexpr float GROUND_Y   = 0.0f;
-            constexpr float AGGRESSIVE_RANGE = TILE_SCALE;
+            const float GROUND_Y   = 0.0f;
+            const float AGGRESSIVE_RANGE = TILE_SCALE;
 
             // CylinderBot stays on the ground plane.
             pos.y = GROUND_Y;
@@ -329,7 +330,7 @@ namespace game
 
         case EnemyType::SphereDrone:
         {
-            constexpr float AGGRESSIVE_RANGE = TILE_SCALE;
+            const float AGGRESSIVE_RANGE = TILE_SCALE;
             pos.y = SPHERE_DRONE_HOVER_Y;
 
             glm::vec3 toPlayer = playerPos - pos;
@@ -342,62 +343,71 @@ namespace game
             int playerTc = static_cast<int>(std::floor(playerPos.x / TILE_SCALE));
             glm::ivec2 playerTile(playerTr, playerTc);
 
-            if (distanceHoriz < AGGRESSIVE_RANGE)
+            // NEW: maintain a stand-off distance once in desired range
+            if (distanceHoriz <= SPHERE_DRONE_DESIRED_RANGE)
             {
-                path_.clear();
-                pathIndex_      = 0;
-                lastPlayerTile_ = { -1, -1 };
-
-                glm::vec3 dir = (distanceHoriz > 0.0001f)
-                    ? toPlayerHoriz / distanceHoriz
-                    : glm::vec3(0.0f, 0.0f, 0.0f);
-
-                vel = dir * chaseSpeed_;
+                // In firing range: hover here (no forward movement)
+                vel = glm::vec3(0.0f);
             }
             else
             {
-                bool reachedTargetTile = (glm::ivec2(curTr, curTc) == targetTile_);
-                if (path_.empty() || playerTile != lastPlayerTile_ || reachedTargetTile)
+                if (distanceHoriz < AGGRESSIVE_RANGE)
                 {
-                    std::vector<glm::ivec2> newPath;
-                    bool hasPath          = maze.findPath(curTr, curTc, playerTr, playerTc, newPath);
-                    bool pathShortEnough  = hasPath && static_cast<int>(newPath.size()) <= MAX_PATH_LENGTH;
-                    if (pathShortEnough)
+                    path_.clear();
+                    pathIndex_      = 0;
+                    lastPlayerTile_ = { -1, -1 };
+
+                    glm::vec3 dir = (distanceHoriz > 0.0001f)
+                        ? toPlayerHoriz / distanceHoriz
+                        : glm::vec3(0.0f, 0.0f, 0.0f);
+
+                    vel = dir * chaseSpeed_;
+                }
+                else
+                {
+                    bool reachedTargetTile = (glm::ivec2(curTr, curTc) == targetTile_);
+                    if (path_.empty() || playerTile != lastPlayerTile_ || reachedTargetTile)
                     {
-                        path_           = newPath;
-                        lastPlayerTile_ = playerTile;
-                        if (path_.size() > 1)
+                        std::vector<glm::ivec2> newPath;
+                        bool hasPath          = maze.findPath(curTr, curTc, playerTr, playerTc, newPath);
+                        bool pathShortEnough  = hasPath && static_cast<int>(newPath.size()) <= MAX_PATH_LENGTH;
+                        if (pathShortEnough)
                         {
-                            pathIndex_  = 1;
-                            targetTile_ = path_[pathIndex_];
+                            path_           = newPath;
+                            lastPlayerTile_ = playerTile;
+                            if (path_.size() > 1)
+                            {
+                                pathIndex_  = 1;
+                                targetTile_ = path_[pathIndex_];
+                            }
+                            else
+                            {
+                                pathIndex_  = 0;
+                                targetTile_ = playerTile;
+                            }
                         }
                         else
                         {
-                            pathIndex_  = 0;
-                            targetTile_ = playerTile;
+                            path_.clear();
+                            pathIndex_      = 0;
+                            targetTile_     = { curTr, curTc };
+                            lastPlayerTile_ = { -1, -1 };
+                            vel             = glm::vec3(0.0f);
+                            pos.y           = SPHERE_DRONE_HOVER_Y;
+                            return;
                         }
                     }
-                    else
-                    {
-                        path_.clear();
-                        pathIndex_      = 0;
-                        targetTile_     = { curTr, curTc };
-                        lastPlayerTile_ = { -1, -1 };
-                        vel             = glm::vec3(0.0f);
-                        pos.y           = SPHERE_DRONE_HOVER_Y;
-                        return;
-                    }
+
+                    float targetCenterX = (static_cast<float>(targetTile_.y) + 0.5f) * TILE_SCALE;
+                    float targetCenterZ = (static_cast<float>(targetTile_.x) + 0.5f) * TILE_SCALE;
+                    glm::vec3 targetPos(targetCenterX, SPHERE_DRONE_HOVER_Y, targetCenterZ);
+                    glm::vec3 dir       = targetPos - pos;
+                    dir.y               = 0.0f;
+                    if (glm::length2(dir) > 0.0001f)
+                        dir = glm::normalize(dir);
+
+                    vel = dir * pathSpeed_;
                 }
-
-                float targetCenterX = (static_cast<float>(targetTile_.y) + 0.5f) * TILE_SCALE;
-                float targetCenterZ = (static_cast<float>(targetTile_.x) + 0.5f) * TILE_SCALE;
-                glm::vec3 targetPos(targetCenterX, SPHERE_DRONE_HOVER_Y, targetCenterZ);
-                glm::vec3 dir       = targetPos - pos;
-                dir.y               = 0.0f;
-                if (glm::length2(dir) > 0.0001f)
-                    dir = glm::normalize(dir);
-
-                vel = dir * pathSpeed_;
             }
 
             glm::vec3 newPos = pos + vel * dt;
@@ -417,7 +427,7 @@ namespace game
             pos = newPos;
             pos.y = SPHERE_DRONE_HOVER_Y;
 
-            yaw = std::atan2(playerPos.z - pos.z, playerPos.x - pos.x);
+            yaw = std::atan2(playerPos.x - pos.x, playerPos.z - pos.z) + M_PI / 2;
 
             fireCooldown_ = std::max(0.0f, fireCooldown_ - dt);
             float distanceToPlayer = glm::length(toPlayer);
@@ -477,25 +487,39 @@ namespace game
                 break;
             }
 
-        case EnemyType::SphereDrone:
-        {
-            glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT | GL_ENABLE_BIT | GL_TEXTURE_BIT);
-            glDisable(GL_LIGHTING);
-            glDisable(GL_CULL_FACE);
-            glEnable(GL_TEXTURE_2D);
-            glBindTexture(GL_TEXTURE_2D, globals::liow_texture);
-            glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+            case EnemyType::SphereDrone:
+            {
+                glPushAttrib(GL_LIGHTING_BIT | GL_CURRENT_BIT | GL_ENABLE_BIT | GL_TEXTURE_BIT);
 
-            glPushMatrix();
-            glTranslatef(pos.x, pos.y, pos.z);
-            glColor3f(1.0f, 1.0f, 1.0f);
-            draw_sphere(radius, 20, 32);
-            glPopMatrix();
+                glDisable(GL_LIGHTING);
+                glDisable(GL_CULL_FACE);
+                glEnable(GL_TEXTURE_2D);
+                glBindTexture(GL_TEXTURE_2D, globals::liow_texture);
+                glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
 
-            glBindTexture(GL_TEXTURE_2D, 0);
-            glPopAttrib();
-            break;
-        }
+                glMatrixMode(GL_TEXTURE);
+                glPushMatrix();
+                glLoadIdentity();
+                glScalef(1.0f, -1.0f, 1.0f);
+                glTranslatef(0.0f, -1.0f, 0.0f);
+                glMatrixMode(GL_MODELVIEW);
+                
+                glPushMatrix();
+                glTranslatef(pos.x, pos.y, pos.z);
+                float yawDegrees = yaw * 180.0f / M_PI;
+                glRotatef(yawDegrees, 0.0f, 1.0f, 0.0f);
+                glColor3f(1.0f, 1.0f, 1.0f);
+                draw_sphere(radius, 20, 32);
+                glPopMatrix();
+
+                glMatrixMode(GL_TEXTURE);
+                glPopMatrix();
+                glMatrixMode(GL_MODELVIEW);
+
+                glBindTexture(GL_TEXTURE_2D, 0);
+                glPopAttrib();
+                break;
+            }
 
         case EnemyType::CubeTurret:
         case EnemyType::PyramidCharger:
