@@ -155,4 +155,38 @@ namespace game
 
         glEnd();
     }
+
+    void draw_sphere(float radius, int stacks, int slices)
+    {
+        for (int i = 0; i < stacks; ++i)
+        {
+            float phi1 = static_cast<float>(M_PI) * static_cast<float>(i) / static_cast<float>(stacks);
+            float phi2 = static_cast<float>(M_PI) * static_cast<float>(i + 1) / static_cast<float>(stacks);
+
+            float y1 = std::cos(phi1) * radius;
+            float y2 = std::cos(phi2) * radius;
+            float r1 = std::sin(phi1) * radius;
+            float r2 = std::sin(phi2) * radius;
+
+            glBegin(GL_TRIANGLE_STRIP);
+            for (int j = 0; j <= slices; ++j)
+            {
+                float theta = 2.0f * static_cast<float>(M_PI) * static_cast<float>(j) / static_cast<float>(slices);
+                float cosTheta = std::cos(theta);
+                float sinTheta = std::sin(theta);
+
+                float x1 = r1 * cosTheta;
+                float z1 = r1 * sinTheta;
+                float x2 = r2 * cosTheta;
+                float z2 = r2 * sinTheta;
+
+                glNormal3f(x2 / radius, y2 / radius, z2 / radius);
+                glVertex3f(x2, y2, z2);
+
+                glNormal3f(x1 / radius, y1 / radius, z1 / radius);
+                glVertex3f(x1, y1, z1);
+            }
+            glEnd();
+        }
+    }
 }

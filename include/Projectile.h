@@ -14,6 +14,7 @@ namespace game
         glm::vec3 velocity{0.0f};
         float remainingLife{2.5f};
         int damage{20};
+        bool fromPlayer{true}; // true for player bullets, false for enemy bullets
     };
 
     // Projectiles

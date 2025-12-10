@@ -108,6 +108,7 @@ namespace
         shot.position = eyePosition + dir * (game::PLAYER_EYE_RADIUS * 0.5f);
         shot.velocity = dir * PROJECTILE_SPEED;
         shot.damage   = PROJECTILE_DAMAGE;
+        shot.fromPlayer = true;
 
         game::active_projectiles().push_back(shot);
         state.fireCooldown = state.fireRate;
