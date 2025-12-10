@@ -42,6 +42,8 @@ GLuint load_texture_2d(const std::string & path, bool flipVertically)
     // Select this texture
     glBindTexture(GL_TEXTURE_2D, texid);
 
+    glPixelStorei(GL_UNPACK_ALIGNMENT, 1); // fixes robert cube colors
+
     // Wrapping parameters (repeat in S and T)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);

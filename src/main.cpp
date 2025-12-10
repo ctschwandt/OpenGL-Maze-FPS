@@ -313,7 +313,7 @@ static inline int ds_idx(int x, int z, int N)
     return z * N + x;
 }
 
-static float ds_average_cardinal(const std::vector<float> &map,
+static float ds_average_cardinal(const std::vector<float> & map,
                                  int i, int j, int half, int N)
 {
     float sum = 0.0f;
@@ -562,12 +562,17 @@ static void draw_worldbox_sphere()
 //==============================================================
 // Game globals
 //==============================================================
-Maze maze(5);
+constexpr int MIN_MAZE_N = 3;
+constexpr int MAX_MAZE_N = 8;
+
+Maze maze;
+
 const float TILE_SCALE = 15.0f;
 const float TOP_DOWN_ZOOM_STEP = 0.005f;
 const float TOP_DOWN_ZOOM_MIN = 0.1f;
 const float TOP_DOWN_ZOOM_MAX = 0.5f;
 float top_down_zoom = 0.2f;
+
 const game::EnemySpawnWeights ENEMY_SPAWN_WEIGHTS{ 1.0f, 1.0f, 1.0f, 1.0f };
 
 bool maze_had_enemies = false;
@@ -580,10 +585,10 @@ const float PI_F = 3.14159265358979323846f;
 //==============================================================
 // Helpers
 //==============================================================
-glm::ivec2 random_start_cell()
+glm::ivec2 random_start_cell(int maze_n)
 {
-    int start_r = std::rand() % maze.n;
-    int start_c = std::rand() % maze.n;
+    int start_r = std::rand() % maze_n;
+    int start_c = std::rand() % maze_n;
     return glm::ivec2(start_r, start_c);
 }
 
@@ -647,14 +652,24 @@ void reset_player_state_for_spawn(bool resetStats)
 
 void start_new_run(bool resetPlayerStats = true)
 {
-    glm::ivec2 playerStartCell = random_start_cell();
+    // 1) Choose a random maze size n in [MIN_MAZE_N, MAX_MAZE_N]
+    int newMazeN = MIN_MAZE_N + (std::rand() % (MAX_MAZE_N - MIN_MAZE_N + 1));
 
-    globals::enemy_freeze_active = false;
+    // 2) Rebuild the Maze if the size changed
+    if (maze.n != newMazeN)
+    {
+        maze = Maze(newMazeN);
+    }
+
+    // 3) Random start cell for this maze size
+    glm::ivec2 playerStartCell = random_start_cell(maze.n);
+
+    globals::enemy_freeze_active        = false;
     globals::enemy_freeze_used_this_run = false;
 
     maze.init(playerStartCell.x, playerStartCell.y);
-    //maze.print();
-    //std::cout << std::endl;
+    // maze.print();
+    // std::cout << std::endl;
 
     place_player_at_cell(playerStartCell);
     reset_player_state_for_spawn(resetPlayerStats);
@@ -724,11 +739,11 @@ void compute_visibility_mask(Maze & maze,
     if (originTr >= 0 && originTr < tileN && originTc >= 0 && originTc < tileN)
         mark_visible(originTr, originTc);
 
-    const int   NUM_RAYS = 720;
-    const float FOV_DEG  = 120.0f; // 100 degrees
-    const float FOV = FOV_DEG * (PI_F / 180.0f);
-    const float HALF_FOV = FOV * 0.5f;
-    const float STEP = tileScale * 0.25f;
+    const int   NUM_RAYS  = 252;
+    const float FOV_DEG   = 120.0f;
+    const float FOV       = FOV_DEG * (PI_F / 180.0f);
+    const float HALF_FOV  = FOV * 0.5f;
+    const float STEP      = tileScale * 0.25f;
 
     for (int i = 0; i < NUM_RAYS; ++i)
     {
@@ -991,16 +1006,16 @@ void draw_player_direction_indicator(const game::PlayerMovement & playerState)
     else
         perp = glm::vec3(1.0f, 0.0f, 0.0f);
 
-    const float arrowLength = game::PLAYER_RADIUS * 2.0f;
-    const float arrowHalfW = arrowLength * 0.35f;
+    const float arrowLength   = game::PLAYER_RADIUS * 2.0f;
+    const float arrowHalfW    = arrowLength * 0.35f;
     const float arrowBackDist = arrowLength * 0.35f;
 
     const float arrowHeight = playerState.position.y + game::PLAYER_BODY_HEIGHT + 0.05f;
 
-    glm::vec3 tip = playerState.position + dir * arrowLength;
+    glm::vec3 tip        = playerState.position + dir * arrowLength;
     glm::vec3 baseCenter = playerState.position - dir * arrowBackDist;
-    glm::vec3 baseLeft = baseCenter - perp * arrowHalfW;
-    glm::vec3 baseRight = baseCenter + perp * arrowHalfW;
+    glm::vec3 baseLeft   = baseCenter - perp * arrowHalfW;
+    glm::vec3 baseRight  = baseCenter + perp * arrowHalfW;
 
     glPushAttrib(GL_LIGHTING_BIT);
     glDisable(GL_LIGHTING);
@@ -1018,15 +1033,25 @@ void draw_projectiles(const std::vector<game::Projectile> & projectiles)
 {
     const float radius = 0.2f;
 
-    glColor3f(1.0f, 0.9f, 0.2f);
+    glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_TEXTURE_BIT | GL_CURRENT_BIT);
+    glDisable(GL_LIGHTING);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, globals::robert_texture);
+    glTexEnvf(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_REPLACE);
+    glColor3f(1.0f, 1.0f, 1.0f);
+
     for (const auto & p : projectiles)
     {
         if (!world_pos_visible(p.position.x, p.position.z))
             continue;
 
+        // draw bullet
         draw_textured_box(p.position.x, p.position.y, p.position.z,
                           radius, radius, radius);
     }
+
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glPopAttrib();
 }
 
 //==============================================================
@@ -1037,7 +1062,7 @@ void apply_top_down_view(const game::PlayerMovement & playerState,
                          float tileScale,
                          const Maze & maze)
 {
-    float mazeSpan = tileScale * static_cast<float>(maze.tiles_n);
+    float mazeSpan     = tileScale * static_cast<float>(maze.tiles_n);
     float cameraHeight = std::max(mazeSpan, 120.0f) * top_down_zoom;
 
     view.eye(playerState.position.x, cameraHeight, playerState.position.z);
@@ -1068,17 +1093,17 @@ void handle_top_down_zoom(const mygllib::GLFWInput & input)
 //==============================================================
 void handle_function_keys(const mygllib::GLFWInput & input)
 {
-    static bool tab_down_previous = false;
+    static bool tab_down_previous   = false;
     static bool grave_down_previous = false;
-    static bool r_down_previous = false;
-    static bool m_down_previous = false;
-    static bool f1_down_previous = false;
+    static bool r_down_previous     = false;
+    static bool m_down_previous     = false;
+    static bool f1_down_previous    = false;
 
-    bool tab_down = input.key_down(GLFW_KEY_TAB);
+    bool tab_down   = input.key_down(GLFW_KEY_TAB);
     bool grave_down = input.key_down(GLFW_KEY_GRAVE_ACCENT);
-    bool r_down = input.key_down(GLFW_KEY_R);
-    bool m_down = input.key_down(GLFW_KEY_M);
-    bool f1_down = input.key_down(GLFW_KEY_F1);
+    bool r_down     = input.key_down(GLFW_KEY_R);
+    bool m_down     = input.key_down(GLFW_KEY_M);
+    bool f1_down    = input.key_down(GLFW_KEY_F1);
 
     if (tab_down && !tab_down_previous)
     {
@@ -1113,11 +1138,11 @@ void handle_function_keys(const mygllib::GLFWInput & input)
         }
     }
 
-    tab_down_previous = tab_down;
+    tab_down_previous   = tab_down;
     grave_down_previous = grave_down;
-    r_down_previous = r_down;
-    m_down_previous = m_down;
-    f1_down_previous = f1_down;
+    r_down_previous     = r_down;
+    m_down_previous     = m_down;
+    f1_down_previous    = f1_down;
 }
 
 //==============================================================
@@ -1135,7 +1160,7 @@ void display()
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
 
-        glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        glPushAttrib(GL_ENABLE_BIT | GL_LIGHTING_BIT | GL_COLOR_BUFFER_BIT);
 
         glEnable(GL_DEPTH_TEST);
         glDisable(GL_LIGHTING);
@@ -1155,7 +1180,7 @@ void display()
         return;
     }
 
-    // ================== MAZE MODE ==================//    
+    // ================== MAZE MODE ==================//
     glClearColor(0.0f, 0.0f, 0.0f, 1.0f);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -1305,8 +1330,8 @@ int main(int argc, char ** argv)
         glfwPollEvents();
 
         double currentTime = glfwGetTime();
-        float dt = static_cast<float>(currentTime - lastTime);
-        lastTime = currentTime;
+        float  dt          = static_cast<float>(currentTime - lastTime);
+        lastTime           = currentTime;
 
         // advance worldbox animation time
         g_world_time_sec += dt;
@@ -1382,14 +1407,14 @@ int main(int argc, char ** argv)
             }
 
             glm::vec3 origin = playerState.position;
-            float rayYaw = 0.0f;
+            float     rayYaw = 0.0f;
 
             if (globals::top_down_view)
             {
                 glm::vec3 dir = playerState.facingDirection;
                 if (glm::length2(dir) > 0.0f)
                 {
-                    dir = glm::normalize(glm::vec3(dir.x, 0.0f, dir.z));
+                    dir    = glm::normalize(glm::vec3(dir.x, 0.0f, dir.z));
                     rayYaw = std::atan2(dir.z, dir.x);
                 }
                 else

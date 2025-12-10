@@ -15,9 +15,9 @@
 
 namespace
 {
-    constexpr glm::vec3 WORLD_UP(0.0f, 1.0f, 0.0f);
-    constexpr float PROJECTILE_SPEED = 80.0f;
-    constexpr int PROJECTILE_DAMAGE = 20;
+    const glm::vec3 WORLD_UP(0.0f, 1.0f, 0.0f);
+    const float PROJECTILE_SPEED = 20.0f;
+    const int PROJECTILE_DAMAGE = 20;
 
     glm::vec3 forward_from_angles(float yaw, float pitch)
     {
@@ -359,9 +359,13 @@ namespace game
 
         state.position = newPosition;
 
+        float eye_height = PLAYER_EYE_HEIGHT;
+        if (state.sliding)
+            eye_height *= 0.6f;
+
         glm::vec3 eyeOffset   = forward * PLAYER_EYE_RADIUS;
         glm::vec3 eyePosition = glm::vec3(state.position.x + eyeOffset.x,
-                                          state.position.y + PLAYER_EYE_HEIGHT,
+                                          state.position.y + eye_height,
                                           state.position.z + eyeOffset.z);
 
         glm::vec3 aimDirection = globals::top_down_view
