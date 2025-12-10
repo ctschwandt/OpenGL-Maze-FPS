@@ -562,8 +562,8 @@ static void draw_worldbox_sphere()
 //==============================================================
 // Game globals
 //==============================================================
-constexpr int MIN_MAZE_N = 3;
-constexpr int MAX_MAZE_N = 8;
+const int MIN_MAZE_N = 3;
+const int MAX_MAZE_N = 8;
 
 Maze maze;
 

@@ -16,10 +16,10 @@ namespace mygllib
 
 namespace game
 {
-    constexpr float PLAYER_BODY_HEIGHT = 1.4f;
-    constexpr float PLAYER_EYE_HEIGHT  = PLAYER_BODY_HEIGHT;
-    constexpr float PLAYER_RADIUS      = 0.8f;
-    constexpr float PLAYER_EYE_RADIUS  = PLAYER_RADIUS + 0.08f;
+    const float PLAYER_BODY_HEIGHT = 1.4f;
+    const float PLAYER_EYE_HEIGHT  = PLAYER_BODY_HEIGHT;
+    const float PLAYER_RADIUS      = 0.8f;
+    const float PLAYER_EYE_RADIUS  = PLAYER_RADIUS + 0.08f;
 
     struct PlayerInput
     {
