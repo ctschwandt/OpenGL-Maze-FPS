@@ -236,7 +236,7 @@ namespace game
                                        const std::vector<Enemy> & enemies,
                                        float dt)
         {
-            float contact_radius = game::PLAYER_RADIUS;
+            float contact_radius = player_state.collisionRadius;
             float accumulated_damage = 0.0f;
 
             for (const auto & enemy : enemies)
@@ -362,17 +362,18 @@ namespace game
                 vel.z = 0.0f;
             }
 
-            if (collides_with_player(new_pos.x, pos.z, radius, player_pos, player_radius))
-            {
-                new_pos.x = pos.x;
-                vel.x = 0.0f;
-            }
+            // no longer stop enemy from walking into player
+            // if (collides_with_player(new_pos.x, pos.z, radius, player_pos, player_radius))
+            // {
+            //     new_pos.x = pos.x;
+            //     vel.x = 0.0f;
+            // }
 
-            if (collides_with_player(new_pos.x, new_pos.z, radius, player_pos, player_radius))
-            {
-                new_pos.z = pos.z;
-                vel.z = 0.0f;
-            }
+            // if (collides_with_player(new_pos.x, new_pos.z, radius, player_pos, player_radius))
+            // {
+            //     new_pos.z = pos.z;
+            //     vel.z = 0.0f;
+            // }
 
             pos = new_pos;
             pos.y = GROUND_Y;

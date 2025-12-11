@@ -346,28 +346,29 @@ namespace game
             state.velocity.z = 0.0f;
         }
 
-        auto collides_with_enemy = [&](float worldX, float worldZ, float radius, const Enemy & enemy) -> bool
-        {
-            float dx = worldX - enemy.pos.x;
-            float dz = worldZ - enemy.pos.z;
-            float minDist = radius + enemy.radius;
-            return (dx * dx + dz * dz) < (minDist * minDist);
-        };
+        // auto collides_with_enemy = [&](float worldX, float worldZ, float radius, const Enemy & enemy) -> bool
+        // {
+        //     float dx = worldX - enemy.pos.x;
+        //     float dz = worldZ - enemy.pos.z;
+        //     float minDist = radius + enemy.radius;
+        //     return (dx * dx + dz * dz) < (minDist * minDist);
+        // };
 
-        for (const auto & enemy : active_enemies())
-        {
-            if (collides_with_enemy(newPosition.x, state.position.z, state.collisionRadius, enemy))
-            {
-                newPosition.x   = state.position.x;
-                state.velocity.x = 0.0f;
-            }
+        // no longer check for collision with enemies
+        // for (const auto & enemy : active_enemies())
+        // {
+        //     if (collides_with_enemy(newPosition.x, state.position.z, state.collisionRadius, enemy))
+        //     {
+        //         newPosition.x   = state.position.x;
+        //         state.velocity.x = 0.0f;
+        //     }
 
-            if (collides_with_enemy(newPosition.x, newPosition.z, state.collisionRadius, enemy))
-            {
-                newPosition.z   = state.position.z;
-                state.velocity.z = 0.0f;
-            }
-        }
+        //     if (collides_with_enemy(newPosition.x, newPosition.z, state.collisionRadius, enemy))
+        //     {
+        //         newPosition.z   = state.position.z;
+        //         state.velocity.z = 0.0f;
+        //     }
+        // }
 
         // Simple ground collision/response (flat plane at groundHeight)
         if (newPosition.y <= state.groundHeight)
