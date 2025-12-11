@@ -35,7 +35,7 @@ namespace game
         glm::vec3 previous_position() const;
         void set_previous_position(const glm::vec3 & pos);
 
-        virtual void update(float dt, const glm::vec3 & player_pos, const Maze & maze);
+        virtual void update(float dt, const glm::vec3 & player_pos, float player_radius, const Maze & maze);
         virtual void draw() const;
 
         void set_collision_size(float half_width, float half_depth);
