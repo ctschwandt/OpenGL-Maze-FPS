@@ -173,6 +173,18 @@ namespace game
             return false;
         }
 
+        bool collides_with_player(float world_x,
+                                  float world_z,
+                                  float actor_radius,
+                                  const glm::vec3 & player_pos,
+                                  float player_radius)
+        {
+            float dx = world_x - player_pos.x;
+            float dz = world_z - player_pos.z;
+            float min_dist = actor_radius + player_radius;
+            return (dx * dx + dz * dz) < (min_dist * min_dist);
+        }
+
         void resolve_enemy_collisions(std::vector<Enemy> & enemies, const Maze & maze)
         {
             const float MIN_DIST_SQ_EPSILON = 0.0001f;
@@ -253,7 +265,7 @@ namespace game
         }
     } // anonymous namespace
 
-    void Enemy::update(float dt, const glm::vec3 & player_pos, const Maze & maze)
+    void Enemy::update(float dt, const glm::vec3 & player_pos, float player_radius, const Maze & maze)
     {
         switch (type_)
         {
@@ -345,6 +357,18 @@ namespace game
             }
 
             if (collides_with_wall(new_pos.x, new_pos.z, collision_half_width_, maze))
+            {
+                new_pos.z = pos.z;
+                vel.z = 0.0f;
+            }
+
+            if (collides_with_player(new_pos.x, pos.z, radius, player_pos, player_radius))
+            {
+                new_pos.x = pos.x;
+                vel.x = 0.0f;
+            }
+
+            if (collides_with_player(new_pos.x, new_pos.z, radius, player_pos, player_radius))
             {
                 new_pos.z = pos.z;
                 vel.z = 0.0f;
@@ -448,6 +472,18 @@ namespace game
             }
 
             if (collides_with_wall(new_pos.x, new_pos.z, collision_half_width_, maze))
+            {
+                new_pos.z = pos.z;
+                vel.z = 0.0f;
+            }
+
+            if (collides_with_player(new_pos.x, pos.z, radius, player_pos, player_radius))
+            {
+                new_pos.x = pos.x;
+                vel.x = 0.0f;
+            }
+
+            if (collides_with_player(new_pos.x, new_pos.z, radius, player_pos, player_radius))
             {
                 new_pos.z = pos.z;
                 vel.z = 0.0f;
@@ -650,7 +686,7 @@ namespace game
             enemy.set_previous_position(enemy.pos);
 
         for (auto & enemy : enemies)
-            enemy.update(dt, player_pos, maze);
+            enemy.update(dt, player_pos, player_state.collisionRadius, maze);
 
         resolve_enemy_collisions(enemies, maze);
 
