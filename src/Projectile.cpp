@@ -48,6 +48,13 @@ namespace game
 
         auto hits_enemy = [](const Projectile & p, const Enemy & enemy) -> bool
         {
+            if (enemy.type() == EnemyType::SphereDrone)
+            {
+                glm::vec3 diff = p.position - enemy.pos;
+                float distance2 = glm::dot(diff, diff);
+                return distance2 <= enemy.radius * enemy.radius;
+            }
+
             float minY = enemy.pos.y;
             float maxY = enemy.pos.y + enemy.height;
 
