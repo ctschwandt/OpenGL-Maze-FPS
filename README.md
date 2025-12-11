@@ -1,4 +1,4 @@
-# OpenGL Maze FPS (in progress)
+# OpenGL Maze FPS
 
 A 3D first-person shooter that uses OpenGL with GLFW for windowing/input to render randomly generated maze environments. The project features dual camera views (first-person and bird's-eye), textured walls/objects, moving robot enemies, shooting mechanics, and basic collision detection.
 
