@@ -47,11 +47,11 @@ void handle_function_keys(const mygllib::GLFWInput & input)
     static bool m_down_previous     = false;
     static bool f1_down_previous    = false;
 
-    bool tab_down   = input.key_down(GLFW_KEY_TAB);
+    bool tab_down = input.key_down(GLFW_KEY_TAB);
     bool grave_down = input.key_down(GLFW_KEY_GRAVE_ACCENT);
-    bool r_down     = input.key_down(GLFW_KEY_R);
-    bool m_down     = input.key_down(GLFW_KEY_M);
-    bool f1_down    = input.key_down(GLFW_KEY_F1);
+    bool r_down = input.key_down(GLFW_KEY_R);
+    bool m_down = input.key_down(GLFW_KEY_M);
+    bool f1_down = input.key_down(GLFW_KEY_F1);
 
     if (tab_down && !tab_down_previous)
     {
