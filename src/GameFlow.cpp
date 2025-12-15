@@ -72,6 +72,10 @@ namespace gameflow
 
     void start_new_run(bool resetPlayerStats)
     {
+        mygllib::View & view = *(mygllib::SingletonView::getInstance());
+        const float old_yaw = view.yaw();
+        const float old_pitch = view.pitch();
+        
         // 1) Choose a random maze size n in [MIN_MAZE_N, MAX_MAZE_N]
         int newMazeN = MIN_MAZE_N + (std::rand() % (MAX_MAZE_N - MIN_MAZE_N + 1));
 
@@ -90,6 +94,9 @@ namespace gameflow
         maze.init(playerStartCell.x, playerStartCell.y);
 
         place_player_at_cell(playerStartCell);
+        view.yaw() = old_yaw;
+        view.pitch() = old_pitch;
+        view.update_center_from_yaw_pitch();
         reset_player_state_for_spawn(resetPlayerStats);
         game::active_projectiles().clear();
         game::spawn_enemies(maze, TILE_SCALE, playerStartCell, ENEMY_SPAWN_WEIGHTS);
