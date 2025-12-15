@@ -29,48 +29,48 @@ namespace game
     {
         glm::vec3 position{0.0f};
         glm::vec3 velocity{0.0f};
-        glm::vec3 facingDirection{0.0f, 0.0f, -1.0f};
+        glm::vec3 facing_direction{0.0f, 0.0f, -1.0f};
         int health{100};
-        int maxHealth{100};
+        int max_health{100};
         int score{0};
-        bool onGround{true};
+        bool on_ground{true};
         bool dashing{false};
         bool sliding{false};
-        float dashTimer{0.0f};
-        float slideTimer{0.0f};
+        float dash_timer{0.0f};
+        float slide_timer{0.0f};
 
         // Movement tuning parameters
-        float maxGroundSpeed   = 15.0f;
-        float maxAirSpeed      = 25.0f;
-        float accelGround      = 80.0f;
-        float accelAir         = 40.0f;
-        float frictionGround   = 10.0f;
-        float frictionAir      = 0.5f;
-        float slideFriction    = 2.0f;
-        float jumpSpeed        = 10.0f;
+        float max_ground_speed   = 15.0f;
+        float max_air_speed      = 25.0f;
+        float accel_ground       = 80.0f;
+        float accel_air          = 40.0f;
+        float friction_ground    = 10.0f;
+        float friction_air       = 0.5f;
+        float slide_friction     = 2.0f;
+        float jump_speed         = 10.0f;
         float gravity          = 25.0f;
-        float dashSpeed        = 40.0f;
-        float dashDuration     = 0.12f;
-        float slideDuration    = 0.5f;
-        float slideThreshold   = 8.0f;
-        float collisionRadius  = PLAYER_EYE_RADIUS + 0.3f;   // horizontal collision radius in world units
-        float fireRate         = 0.2f;    // seconds between shots
-        float damageBuffer     = 0.0f;    // accumulates fractional damage before applying to integer health
+        float dash_speed        = 40.0f;
+        float dash_duration     = 0.12f;
+        float slide_duration    = 0.5f;
+        float slide_threshold   = 8.0f;
+        float collision_radius  = PLAYER_EYE_RADIUS + 0.3f;   // horizontal collision radius in world units
+        float fire_rate         = 0.2f;    // seconds between shots
+        float damage_buffer     = 0.0f;    // accumulates fractional damage before applying to integer health
 
         // Utility state
-        float groundHeight     = 0.0f;
+        float ground_height     = 0.0f;
         bool initialized       = false;
-        bool dashKeyLast       = false;
-        bool jumpKeyLast       = false;
-        bool crouchKeyLast     = false;
-        float fireCooldown     = 0.0f;
+        bool dash_key_last       = false;
+        bool jump_key_last       = false;
+        bool crouch_key_last     = false;
+        float fire_cooldown      = 0.0f;
     };
 
     class Player : public Actor
     {
     public:
-        bool onGround{false};
-        float fireCooldown{0.0f};
+        bool on_ground{false};
+        float fire_cooldown{0.0f};
 
         void update(const Maze & maze, const PlayerInput & input, float dt);
     };

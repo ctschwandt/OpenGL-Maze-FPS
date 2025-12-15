@@ -9,7 +9,7 @@ namespace mygllib
     {
         glm::vec3 pos{0.0f};
         glm::vec3 vel{0.0f};
-        bool onGround{true};
+        bool on_ground{true};
         bool sliding{false};
     };
 }

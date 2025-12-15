@@ -264,7 +264,7 @@ int main(int argc, char ** argv)
 
             if (globals::top_down_view)
             {
-                glm::vec3 dir = playerState.facingDirection;
+                glm::vec3 dir = playerState.facing_direction;
                 if (glm::length2(dir) > 0.0f)
                 {
                     dir    = glm::normalize(glm::vec3(dir.x, 0.0f, dir.z));
