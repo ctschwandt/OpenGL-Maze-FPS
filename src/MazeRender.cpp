@@ -207,7 +207,7 @@ void draw_player(const game::PlayerMovement & playerState)
 
 void draw_player_indicator(const game::PlayerMovement & playerState)
 {
-    glm::vec3 dir(playerState.facingDirection.x, 0.0f, playerState.facingDirection.z);
+    glm::vec3 dir(playerState.facing_direction.x, 0.0f, playerState.facing_direction.z);
     if (glm::length2(dir) == 0.0f)
         dir = glm::vec3(0.0f, 0.0f, -1.0f);
 

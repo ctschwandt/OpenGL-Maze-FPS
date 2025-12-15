@@ -52,7 +52,7 @@ namespace gameflow
         {
             game::PlayerMovement & playerState = game::player_movement_state();
             const int preservedHealth    = playerState.health;
-            const int preservedMaxHealth = playerState.maxHealth;
+            const int preservedMaxHealth = playerState.max_health;
             const int preservedScore     = playerState.score;
 
             playerState = game::PlayerMovement();
@@ -60,7 +60,7 @@ namespace gameflow
             if (!resetStats)
             {
                 playerState.health    = preservedHealth;
-                playerState.maxHealth = preservedMaxHealth;
+                playerState.max_health = preservedMaxHealth;
                 playerState.score     = preservedScore;
             }
             playerState.initialized = false;

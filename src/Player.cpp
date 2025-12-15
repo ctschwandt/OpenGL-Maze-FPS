@@ -91,14 +91,14 @@ namespace
                   const glm::vec3 & eye_position,
                   float dt)
     {
-        state.fireCooldown = std::max(0.0f, state.fireCooldown - dt);
+        state.fire_cooldown = std::max(0.0f, state.fire_cooldown - dt);
 
         int button_state = glfwGetMouseButton(input.window(), GLFW_MOUSE_BUTTON_LEFT);
         bool firing      = (button_state == GLFW_PRESS) ||
                            input.key_down(GLFW_KEY_ENTER) ||
                            input.key_down(GLFW_KEY_KP_ENTER);
 
-        if (!firing || state.fireCooldown > 0.0f)
+        if (!firing || state.fire_cooldown > 0.0f)
             return;
 
         glm::vec3 dir = glm::normalize(aim_direction);
@@ -112,7 +112,7 @@ namespace
         shot.fromPlayer = true;
 
         game::active_projectiles().push_back(shot);
-        state.fireCooldown = state.fireRate;
+        state.fire_cooldown = state.fire_rate;
     }
 }
 
@@ -142,19 +142,19 @@ namespace game
             if (glm::length2(forward) == 0.0f)
                 forward = glm::vec3(0.0f, 0.0f, -1.0f);
 
-            state.health       = std::clamp(state.health, 0, state.maxHealth);
+            state.health       = std::clamp(state.health, 0, state.max_health);
             if (state.health == 0)
-                state.health = state.maxHealth;
+                state.health = state.max_health;
             state.score        = std::max(0, state.score);
-            state.damageBuffer = 0.0f;
+            state.damage_buffer = 0.0f;
 
             glm::vec3 eye_offset = forward * PLAYER_EYE_RADIUS;
 
             state.position     = glm::vec3(eye_pos.x - eye_offset.x,
                                             eye_pos.y - PLAYER_EYE_HEIGHT,
                                             eye_pos.z - eye_offset.z);
-            state.groundHeight = state.position.y;
-            //state.collisionRadius = collisionRadius;
+            state.ground_height = state.position.y;
+            //state.collision_radius = collision_radius;
             state.initialized  = true;
         }
 
@@ -181,7 +181,7 @@ namespace game
                 forward = glm::vec3(0.0f, 0.0f, -1.0f);
 
             if (glm::length2(aim_forward) > 0.0f)
-                state.facingDirection = glm::normalize(aim_forward);
+                state.facing_direction = glm::normalize(aim_forward);
         }
 
         // Build wish direction from WASD
@@ -211,17 +211,17 @@ namespace game
                 arrow_dir.x -= 1.0f;
 
             if (glm::length2(arrow_dir) > 0.0f)
-                state.facingDirection = glm::normalize(arrow_dir);
+                state.facing_direction = glm::normalize(arrow_dir);
         }
 
         // Edge-triggered inputs
-        bool dash_pressed = input.key_down(GLFW_KEY_LEFT_SHIFT) && !state.dashKeyLast;
-        bool jump_pressed = input.key_down(GLFW_KEY_SPACE)      && !state.jumpKeyLast;
+        bool dash_pressed = input.key_down(GLFW_KEY_LEFT_SHIFT) && !state.dash_key_last;
+        bool jump_pressed = input.key_down(GLFW_KEY_SPACE)      && !state.jump_key_last;
         bool crouch_down  = input.key_down(GLFW_KEY_LEFT_CONTROL);
 
-        state.dashKeyLast   = input.key_down(GLFW_KEY_LEFT_SHIFT);
-        state.jumpKeyLast   = input.key_down(GLFW_KEY_SPACE);
-        state.crouchKeyLast = crouch_down;
+        state.dash_key_last   = input.key_down(GLFW_KEY_LEFT_SHIFT);
+        state.jump_key_last   = input.key_down(GLFW_KEY_SPACE);
+        state.crouch_key_last = crouch_down;
 
         // --- DASH ---
         // Dash: override horizontal velocity and skip friction/accel while active
@@ -234,23 +234,23 @@ namespace game
             dash_dir = glm::normalize(glm::vec3(dash_dir.x, 0.0f, dash_dir.z));
 
             // Preserve vertical velocity, override horizontal
-            state.velocity.x = dash_dir.x * state.dashSpeed;
-            state.velocity.z = dash_dir.z * state.dashSpeed;
+            state.velocity.x = dash_dir.x * state.dash_speed;
+            state.velocity.z = dash_dir.z * state.dash_speed;
 
             state.dashing   = true;
-            state.dashTimer = state.dashDuration;
+            state.dash_timer = state.dash_duration;
             state.sliding   = false;
         }
 
         if (!state.dashing)
         {
             // --- SLIDE START ---
-            if (state.onGround && crouch_down &&
+            if (state.on_ground && crouch_down &&
                 !state.sliding &&
-                horizontal_speed(state.velocity) > state.slideThreshold)
+                horizontal_speed(state.velocity) > state.slide_threshold)
             {
                 state.sliding    = true;
-                state.slideTimer = state.slideDuration;
+                state.slide_timer = state.slide_duration;
 
                 // Optional: small horizontal speed boost to emphasize slide
                 glm::vec3 horiz(state.velocity.x, 0.0f, state.velocity.z);
@@ -267,17 +267,17 @@ namespace game
             // --- SLIDE UPDATE / STOP ---
             if (state.sliding)
             {
-                state.slideTimer -= dt;
-                if (state.slideTimer <= 0.0f || !crouch_down || !state.onGround)
+                state.slide_timer -= dt;
+                if (state.slide_timer <= 0.0f || !crouch_down || !state.on_ground)
                 {
                     state.sliding = false;
                 }
             }
 
             // --- FRICTION ---
-            float friction = state.frictionAir;
-            if (state.onGround)
-                friction = state.sliding ? state.slideFriction : state.frictionGround;
+            float friction = state.friction_air;
+            if (state.on_ground)
+                friction = state.sliding ? state.slide_friction : state.friction_ground;
 
             apply_friction(state, friction, dt);
 
@@ -285,8 +285,8 @@ namespace game
             // IMPORTANT: no normal accel while sliding, so slide feels like a glide
             if (!state.sliding && glm::length2(wish_dir) > 0.0f)
             {
-                float wish_speed = state.onGround ? state.maxGroundSpeed : state.maxAirSpeed;
-                float accel     = state.onGround ? state.accelGround    : state.accelAir;
+                float wish_speed = state.on_ground ? state.max_ground_speed : state.max_air_speed;
+                float accel     = state.on_ground ? state.accel_ground    : state.accel_air;
                 accelerate(state, wish_dir, wish_speed, accel, dt);
             }
         }
@@ -294,20 +294,20 @@ namespace game
         // Dash timer
         if (state.dashing)
         {
-            state.dashTimer -= dt;
-            if (state.dashTimer <= 0.0f)
+            state.dash_timer -= dt;
+            if (state.dash_timer <= 0.0f)
                 state.dashing = false;
         }
 
         // --- JUMP ---
-        if (state.onGround && jump_pressed)
+        if (state.on_ground && jump_pressed)
         {
-            state.velocity.y = state.jumpSpeed;
-            state.onGround   = false;
+            state.velocity.y = state.jump_speed;
+            state.on_ground   = false;
         }
 
         // --- GRAVITY ---
-        if (!state.onGround)
+        if (!state.on_ground)
         {
             state.velocity.y -= state.gravity * dt;
         }
@@ -335,12 +335,12 @@ namespace game
         };
 
         // Resolve horizontal collisions axis-by-axis to avoid tunneling into corners
-        if (collides_with_wall(new_position.x, state.position.z, state.collisionRadius))
+        if (collides_with_wall(new_position.x, state.position.z, state.collision_radius))
         {
             new_position.x   = state.position.x;
             state.velocity.x = 0.0f;
         }
-        if (collides_with_wall(new_position.x, new_position.z, state.collisionRadius))
+        if (collides_with_wall(new_position.x, new_position.z, state.collision_radius))
         {
             new_position.z   = state.position.z;
             state.velocity.z = 0.0f;
@@ -357,30 +357,30 @@ namespace game
         // no longer check for collision with enemies
         // for (const auto & enemy : active_enemies())
         // {
-        //     if (collides_with_enemy(new_position.x, state.position.z, state.collisionRadius, enemy))
+        //     if (collides_with_enemy(new_position.x, state.position.z, state.collision_radius, enemy))
         //     {
         //         new_position.x   = state.position.x;
         //         state.velocity.x = 0.0f;
         //     }
 
-        //     if (collides_with_enemy(new_position.x, new_position.z, state.collisionRadius, enemy))
+        //     if (collides_with_enemy(new_position.x, new_position.z, state.collision_radius, enemy))
         //     {
         //         new_position.z   = state.position.z;
         //         state.velocity.z = 0.0f;
         //     }
         // }
 
-        // Simple ground collision/response (flat plane at groundHeight)
-        if (new_position.y <= state.groundHeight)
+        // Simple ground collision/response (flat plane at ground_height)
+        if (new_position.y <= state.ground_height)
         {
-            new_position.y = state.groundHeight;
+            new_position.y = state.ground_height;
             if (state.velocity.y < 0.0f)
                 state.velocity.y = 0.0f;
-            state.onGround = true;
+            state.on_ground = true;
         }
         else
         {
-            state.onGround = false;
+            state.on_ground = false;
         }
 
         state.position = new_position;
@@ -395,7 +395,7 @@ namespace game
                                           state.position.z + eye_offset.z);
 
         glm::vec3 aim_direction = globals::top_down_view
-                               ? state.facingDirection
+                               ? state.facing_direction
                                : aim_forward;
 
         try_fire(state, input, aim_direction, eye_position, dt);
@@ -413,8 +413,8 @@ namespace game
 
         pos += vel * dt;
 
-        if (fireCooldown > 0.0f)
-            fireCooldown = std::max(0.0f, fireCooldown - dt);
+        if (fire_cooldown > 0.0f)
+            fire_cooldown = std::max(0.0f, fire_cooldown - dt);
     }
 
 }

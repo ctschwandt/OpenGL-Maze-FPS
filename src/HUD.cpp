@@ -106,8 +106,8 @@ namespace
         const float barHeight  = 20.0f;
         const float padding    = 2.0f;
 
-        float ratio = (playerState.maxHealth > 0)
-                    ? static_cast<float>(playerState.health) / static_cast<float>(playerState.maxHealth)
+        float ratio = (playerState.max_health > 0)
+                    ? static_cast<float>(playerState.health) / static_cast<float>(playerState.max_health)
                     : 0.0f;
         ratio = std::clamp(ratio, 0.0f, 1.0f);
 
@@ -152,7 +152,7 @@ namespace
 
     float current_yaw()
     {
-        const glm::vec3 dir = game::player_movement_state().facingDirection;
+        const glm::vec3 dir = game::player_movement_state().facing_direction;
         if (glm::length2(dir) > 0.0001f)
         {
             glm::vec3 flat = glm::normalize(glm::vec3(dir.x, 0.0f, dir.z));

@@ -236,7 +236,7 @@ namespace game
                                        const std::vector<Enemy> & enemies,
                                        float dt)
         {
-            float contact_radius = player_state.collisionRadius;
+            float contact_radius = player_state.collision_radius;
             float accumulated_damage = 0.0f;
 
             for (const auto & enemy : enemies)
@@ -254,13 +254,13 @@ namespace game
                 }
             }
 
-            player_state.damageBuffer += accumulated_damage;
-            int damage = static_cast<int>(player_state.damageBuffer);
+            player_state.damage_buffer += accumulated_damage;
+            int damage = static_cast<int>(player_state.damage_buffer);
 
             if (damage > 0)
             {
                 player_state.health = std::max(0, player_state.health - damage);
-                player_state.damageBuffer -= static_cast<float>(damage);
+                player_state.damage_buffer -= static_cast<float>(damage);
             }
         }
     } // anonymous namespace
@@ -687,7 +687,7 @@ namespace game
             enemy.set_previous_position(enemy.pos);
 
         for (auto & enemy : enemies)
-            enemy.update(dt, player_pos, player_state.collisionRadius, maze);
+            enemy.update(dt, player_pos, player_state.collision_radius, maze);
 
         resolve_enemy_collisions(enemies, maze);
 
