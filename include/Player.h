@@ -83,7 +83,7 @@ namespace game
                                 float dt,
                                 mygllib::View & view,
                                 const Maze & maze,
-                                float tileScale);
+                                float tile_scale);
 
 }
 
