@@ -16,16 +16,16 @@ const float TOP_DOWN_ZOOM_MAX  = 0.5f;
 float top_down_zoom            = 0.2f;
 }
 
-void apply_top_down_view(const game::PlayerMovement & playerState,
+void apply_top_down_view(const game::PlayerMovement & player_state,
                          mygllib::View & view,
-                         float tileScale,
+                         float tile_scale,
                          const Maze & maze)
 {
-    float mazeSpan     = tileScale * static_cast<float>(maze.tiles_n);
-    float cameraHeight = std::max(mazeSpan, 120.0f) * top_down_zoom;
+    float maze_span     = tile_scale * static_cast<float>(maze.tiles_n);
+    float camera_height = std::max(maze_span, 120.0f) * top_down_zoom;
 
-    view.eye(playerState.position.x, cameraHeight, playerState.position.z);
-    view.ref(playerState.position.x, playerState.groundHeight, playerState.position.z);
+    view.eye(player_state.position.x, camera_height, player_state.position.z);
+    view.ref(player_state.position.x, player_state.groundHeight, player_state.position.z);
     view.up(0.0f, 0.0f, -1.0f);
     view.type() = mygllib::View::PERSPECTIVE;
 }

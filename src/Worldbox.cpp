@@ -619,9 +619,9 @@ void set_palette_index(int idx)
     g_worldbox_palette_index = idx;
 }
 
-void set_use_diamond(bool useDiamond)
+void set_use_diamond(bool use_diamond)
 {
-    g_worldbox_useDiamond = useDiamond ? 1 : 0;
+    g_worldbox_useDiamond = use_diamond ? 1 : 0;
 }
 
 } // namespace worldbox
