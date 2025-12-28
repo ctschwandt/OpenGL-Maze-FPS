@@ -68,8 +68,8 @@ namespace game
 
         auto hits_player = [&](const Projectile & p) -> bool
         {
-            float minY = playerState.groundHeight;
-            float maxY = playerState.groundHeight + PLAYER_BODY_HEIGHT;
+            float minY = playerState.ground_height;
+            float maxY = playerState.ground_height + PLAYER_BODY_HEIGHT;
 
             if (p.position.y < minY || p.position.y > maxY)
                 return false;
