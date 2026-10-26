@@ -1,9 +1,13 @@
-// File: gl3d.h
+
+/**
+ * @file gl3d.h
+ */
 
 #ifndef GL3D_H
 #define GL3D_H
 
 #include <stdexcept>
+#include <iostream>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -19,6 +23,9 @@ namespace mygllib
     inline
     GLFWwindow * init3d()
     {
+        // Force X11 instead of Wayland for GLEW compatibility.
+        glfwInitHint(GLFW_PLATFORM, GLFW_PLATFORM_X11);
+
         if (!glfwInit())
         {
             throw std::runtime_error("Failed to initialize GLFW");
@@ -34,13 +41,43 @@ namespace mygllib
         glfwMakeContextCurrent(window);
         glfwSwapInterval(1);
 
+        // --- OpenGL diagnostics ---
+        std::cerr << "Context current: "
+                  << (glfwGetCurrentContext() == window ? "yes" : "no")
+                  << '\n';
+
+        const GLubyte * version = glGetString(GL_VERSION);
+        const GLubyte * renderer = glGetString(GL_RENDERER);
+        const GLubyte * vendor = glGetString(GL_VENDOR);
+
+        std::cerr << "OpenGL version: "
+                  << (version ? reinterpret_cast<const char *>(version) : "(null)")
+                  << '\n';
+
+        std::cerr << "OpenGL renderer: "
+                  << (renderer ? reinterpret_cast<const char *>(renderer) : "(null)")
+                  << '\n';
+
+        std::cerr << "OpenGL vendor: "
+                  << (vendor ? reinterpret_cast<const char *>(vendor) : "(null)")
+                  << '\n';
+
+        // --- GLEW initialization ---
         glewExperimental = GL_TRUE;
-        if (glewInit() != GLEW_OK)
+
+        GLenum err = glewInit();
+        if (err != GLEW_OK)
         {
+            std::cerr << "GLEW initialization failed: "
+                      << reinterpret_cast<const char *>(glewGetErrorString(err))
+                      << " (code " << err << ")\n";
+
             glfwDestroyWindow(window);
             glfwTerminate();
             throw std::runtime_error("Failed to initialize GLEW");
         }
+
+        std::cerr << "GLEW initialized successfully\n";
 
         return window;
     }
@@ -71,16 +108,15 @@ namespace mygllib
             glColor3f(1, 0, 0); // red
             glVertex3f(0, 0, 0);
             glVertex3f(length, 0, 0);
-            glColor3f(0, 1, 0); // green
+            glColor3f(0, 1, 0);
             glVertex3f(0, 0, 0);
             glVertex3f(0, length, 0);
-            glColor3f(0, 0, 1); // blue
+            glColor3f(0, 0, 1);
             glVertex3f(0, 0, 0);
             glVertex3f(0, 0, length);
         }
         glEnd();
     }
-
 
     inline
     void draw_xz_plane(int minx = -20, int maxx = 20,

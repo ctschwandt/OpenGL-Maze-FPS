@@ -1,5 +1,5 @@
 CXX := g++
-CXXFLAGS := -g -Wall -Iinclude
+CXXFLAGS := -g -Wall -DGLM_ENABLE_EXPERIMENTAL -Iinclude
 LDFLAGS := -lGL -lGLU -lGLEW -lglfw -lpng -ljpeg
 
 SRC_DIR := src
